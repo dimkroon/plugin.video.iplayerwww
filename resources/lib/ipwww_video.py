@@ -908,6 +908,15 @@ def ParseProgramme(progr_data, playable=False):
     return programme
 
 
+def ParseProgramme(progr_data):
+    return {
+        'url': 'https://www.bbc.co.uk/iplayer/episodes/' + progr_data['id'],
+        'name': '[B]{}[/B] - {} episodes available'.format(progr_data['title'], progr_data['count']),
+        'iconimage': progr_data.get('images', {}).get('standard', 'DefaultFolder.png').replace('{recipe}', '832x468'),
+        'description': SelectSynopsis(progr_data['synopses'])
+    }
+
+
 def ParseEpisode(episode_data):
     title = episode_data.get('title', '')
     if isinstance(title, dict):
