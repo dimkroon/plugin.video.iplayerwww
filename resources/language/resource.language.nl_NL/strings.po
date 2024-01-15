@@ -336,6 +336,10 @@ msgctxt "#30335"
 msgid "UHD Trial Channels"
 msgstr "UHD Test Kanalen"
 
+msgctxt "#30336"
+msgid "Recommendations"
+msgstr "Aanbevolen"
+
 msgctxt "#30400"
 msgid "Error"
 msgstr "Fout"
@@ -480,3 +484,14 @@ msgctxt "#30529"
 msgid "iPlayer: UHD Trial Channels"
 msgstr "iPLayer: UHD Test Kanalen"
 
+msgctxt "#30530"
+msgid "iPlayer: Recommendations"
+msgstr "iPLayer: Aanbevolen"
+
+msgctxt "#30600"
+msgid "View all episodes"
+msgstr "Toon alle afleveringen"
+
+msgctxt "#30601"
+msgid "Remove"
+msgstr "Verwijderen"
