@@ -481,7 +481,7 @@ def strptime(dt_str: str, format: str):
 
 
 def AddMenuEntry(name, url, mode, iconimage, description='', subtitles_url='', aired=None, resolution=None,
-                 resume_time='', total_time='', episode_id='', stream_id='', context_mnu=None, replay_chan_id=''):
+                 resume_time='', total_time='', programme_id='', episode_id='', stream_id='', context_mnu=None, replay_chan_id=''):
     """Adds a new line to the Kodi list of playables.
     It is used in multiple ways in the plugin, which are distinguished by modes.
     """
@@ -496,6 +496,7 @@ def AddMenuEntry(name, url, mode, iconimage, description='', subtitles_url='', a
         "&iconimage=", utf8_quote_plus(iconimage),
         "&description=", utf8_quote_plus(description),
         "&subtitles_url=", utf8_quote_plus(subtitles_url),
+        "&programme_id=", utf8_quote_plus(programme_id),
         "&episode_id=", utf8_quote_plus(episode_id),
         "&stream_id=", utf8_quote_plus(stream_id),
         "&resume_time=", resume_time,
@@ -552,6 +553,11 @@ def AddMenuEntry(name, url, mode, iconimage, description='', subtitles_url='', a
                 "title": name,
                 "plot": description,
                 "plotoutline": description})
+        if programme_id:
+            if not context_mnu:
+                context_mnu = []
+            context_mnu.append(("Add to BBC's Added",
+                                f'RunPlugin(plugin://plugin.video.iplayerwww?mode=303&programme_id={programme_id}&url=url)'))
 
     if context_mnu:
         listitem.addContextMenuItems(context_mnu)
@@ -562,7 +568,7 @@ def AddMenuEntry(name, url, mode, iconimage, description='', subtitles_url='', a
         listitem.setProperty('inputstream', 'inputstream.adaptive')
         listitem.setProperty('inputstream.adaptive.manifest_type', 'mpd')
 
-    # Mode 119 is not a folder, but it is also not a playable.
+    # Mode 119 (sign out) is not a folder, but it is also not a playable.
     if mode == 119:
         listitem.setProperty("IsPlayable", 'false')
     else:
