@@ -1173,6 +1173,19 @@ def ListFavourites():
     SetSortMethods()
 
 
+def AddFavourite(programme_id):
+    """Add a programme to the 'Added' list
+
+    Handler for the context menu option  'Add' on list items.
+    Add will always succeed as long as programme_id exists, regardless of
+    whether it is already on the 'Added' list.
+
+    """
+    xbmc.log(f'[iPlayer WWW] AddFavourite {programme_id}', xbmc.LOGWARNING)
+    PostJson('https://user.ibl.api.bbc.co.uk/ibl/v1/user/adds/', data={"id": programme_id})
+    xbmc.executebuiltin('Container.Refresh')
+
+
 def RemoveFavourite(programme_id):
     """Remove an item from the Watchlist.
     Handler for the context menu option 'Remove' on list items in 'Watchlist'.

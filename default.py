@@ -87,6 +87,7 @@ try:
 except:
     pass
 
+programme_id = Common.utf8_unquote_plus(params.get('programme_id', ''))
 episode_id = Common.utf8_unquote_plus(params.get('episode_id', ''))
 stream_id = Common.utf8_unquote_plus(params.get('stream_id', ''))
 resume_time = params.get('resume_time', '')
@@ -250,6 +251,10 @@ try:
 
     elif mode == 302:
         Video.RemoveFavourite(episode_id)
+
+    elif mode == 303:
+        xbmc.log(f'[iPlayer WWW] calling handler of mode 303', xbmc.LOGWARNING)
+        Video.AddFavourite(programme_id)
 
 except Exception as err:
     import traceback
