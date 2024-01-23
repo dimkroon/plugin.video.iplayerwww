@@ -572,6 +572,7 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
     icon = ''
     aired = ''
     title = ''
+    programme_id = ''
 
     if 'episode' in item:
         subitem = item['episode']
@@ -605,7 +606,8 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
             if item['count']>1:
                 num_episodes = str(item['count'])
                 if 'id' in item:
-                    main_url = 'https://www.bbc.co.uk/iplayer/episodes/' + item.get('id')
+                    programme_id = item.get('id')
+                    main_url = 'https://www.bbc.co.uk/iplayer/episodes/' + programme_id
             elif 'id' in item:
                 main_url = 'https://www.bbc.co.uk/iplayer/episode/' + item.get('id')
         elif 'id' in item:
@@ -620,10 +622,12 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
                             # There is a directory, and an initial episode.
                             # We need to create one directory and one playable.
                             ParseSingleJSON(meta, ic, name, added_playables, added_directories)
-                            episodes_url = 'https://www.bbc.co.uk/iplayer/episodes/' + item.get('id')
+                            programme_id = item.get('id')
+                            episodes_url = 'https://www.bbc.co.uk/iplayer/episodes/' + programme_id
                     else:
                         # Never seen this, but seems possible. This is just a directory.
-                        episodes_url = 'https://www.bbc.co.uk/iplayer/episodes/' + item.get('id')
+                        programme_id = item.get('id')
+                        episodes_url = 'https://www.bbc.co.uk/iplayer/episodes/' + programme_id
             else:
                 main_url = 'https://www.bbc.co.uk/iplayer/episode/' + item.get('id')
         elif 'href' in item:
@@ -690,7 +694,7 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
     if num_episodes:
         if not main_url in added_directories:
             title = '[B]'+item['title']+'[/B] - '+num_episodes+' episodes available'
-            AddMenuEntry(title, main_url, 139, icon, synopsis, '')
+            AddMenuEntry(title, main_url, 139, icon, synopsis, '', programme_id=programme_id)
             added_directories.append(main_url)
 
     elif episodes_url:
@@ -698,7 +702,7 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
             if episodes_title=='':
                 episodes_title = title
             AddMenuEntry('[B]%s[/B]' % (episodes_title),
-                         episodes_url, 128, icon, synopsis, '')
+                         episodes_url, 128, icon, synopsis, '', programme_id=programme_id)
             added_directories.append(main_url)
     elif main_url:
         if not main_url in added_playables:
