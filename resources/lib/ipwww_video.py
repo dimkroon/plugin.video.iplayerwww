@@ -657,6 +657,7 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
                     episodes_url = 'https://www.bbc.co.uk' + url
                     episodes_title = item["title"]
             if 'episodesAvailable' in meta:
+                # programmes A-Z
                 if meta['episodesAvailable'] > 1:
                     num_episodes = str(meta['episodesAvailable'])
 
@@ -671,6 +672,7 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
             title = name
 
         if 'synopsis' in item:
+            # programmes A-Z
             synopsis = item['synopsis']
         if 'synopses' in item:
             if 'editorial' in item['synopses']:
@@ -683,6 +685,7 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
                 synopsis = item['synopses']['small']
 
         if 'imageTemplate' in item:
+            # Prgogrammes A-Z
             icon = item['imageTemplate'].replace("{recipe}","832x468")
         if 'images' in item:
             icon = item['images']['standard'].replace("{recipe}","832x468")
@@ -692,6 +695,7 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
 
 
     if num_episodes:
+        # Folder from programmes A-Z
         if not main_url in added_directories:
             title = '[B]'+item['title']+'[/B] - '+num_episodes+' episodes available'
             AddMenuEntry(title, main_url, 139, icon, synopsis, '', programme_id=programme_id)
@@ -705,6 +709,7 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
                          episodes_url, 128, icon, synopsis, '', programme_id=programme_id)
             added_directories.append(main_url)
     elif main_url:
+        # Playable from programmes A-Z
         if not main_url in added_playables:
             CheckAutoplay(title , main_url, icon, synopsis, aired)
             added_playables.append(main_url)
@@ -774,6 +779,7 @@ def ParseJSON(programme_data, current_url):
             programmes = programme_data['items']
 
         if programmes:
+            # programmes A-Z
             for item in programmes:
                 meta = None
                 if 'props' in item:
