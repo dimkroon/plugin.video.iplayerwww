@@ -495,3 +495,7 @@ msgstr "Toon alle afleveringen"
 msgctxt "#30601"
 msgid "Remove"
 msgstr "Verwijderen"
+
+msgctxt "#30603"
+msgid "Watch from the start"
+msgstr "Bekijk vanaf het begin"
