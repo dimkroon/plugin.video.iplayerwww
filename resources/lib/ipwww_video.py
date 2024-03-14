@@ -15,7 +15,8 @@ from operator import itemgetter
 from resources.lib.ipwww_common import (
     translation, AddMenuEntry, OpenURL, OpenRequest, CheckLogin, CreateBaseDirectory,
     GetCookieJar, ParseImageUrl, download_subtitles, GeoBlockedError, WebRequestError,
-    iso_duration_2_seconds, PostJson, strptime, addonid, DeleteUrl, ProgressDlg)
+    iso_duration_2_seconds, PostJson, strptime, addonid, DeleteUrl, ProgressDlg,
+    utf8_quote_plus)
 from resources.lib import ipwww_progress
 
 import xbmc
@@ -129,9 +130,7 @@ def AddAvailableUHDTrialItem(name, channelname):
     PlayStream(name, url, "", "", "")
 
 
-# ListLive creates menu entries for all live channels.
-def ListLive():
-    channel_list = [
+channel_list = [
         ('bbc_one_hd',                       'BBC One',                  'bbc_one_london'),
         ('bbc_two_england',                  'BBC Two',                  'bbc_two_england'),
         ('bbc_three_hd',                     'BBC Three',                'bbc_three'),
@@ -166,7 +165,12 @@ def ListLive():
         ('bbc_one_west_midlands',            'BBC One West Midlands',    'bbc_one_london'),
         ('bbc_one_yorks',                    'BBC One Yorks',            'bbc_one_london'),
     ]
+
+
+# ListLive creates menu entries for all live channels.
+def ListLive():
     from urllib.parse import urlencode
+
     schedules = GetSchedules(channel_list)
     for id, name, schedule_chan_id in channel_list:
         now_on, schedule = schedules.get(schedule_chan_id, ('', ''))
@@ -1591,3 +1595,62 @@ def GetSchedules(channel_list):
         res = [executor.submit(get_schedule, chan) for chan in schedule_channels]
         futures.wait(res)
     return dict(zip(schedule_channels, (r.result() for r in res)))
+
+
+def get_epg(chan_list=None):
+    """Get the full EPG from 7 days back to 7 days ahead.
+
+    Used for IPTV manager integration
+    """
+    utc_now = datetime.datetime.utcnow()
+    week_back = utc_now - timedelta(days=7)
+    week_ahead = utc_now + timedelta(days=7)
+
+    if chan_list is None:
+        chan_list = channel_list[:4]
+
+    from_date = week_back
+    items_per_page = 200
+    epg = {}
+    for chan_id, _, schedule_id in chan_list:
+        progr_list = []
+        # Range is just to ensure we break out of the loop at some point if something goes
+        # wrong with counting received items. Schedules should never have more than 2000
+        # items in 2 weeks.
+        for pagenr in range(1, 10):
+            url = ''.join(('https://ibl.api.bbc.co.uk/ibl/v1/channels/',
+                           schedule_id,
+                           '/broadcasts?per_page=',
+                           str(items_per_page),
+                           '&page=',
+                           str(pagenr),
+                           '&from_date=',
+                           from_date.strftime('%Y-%m-%dT%H:%M')))
+            resp_data = json.loads(OpenRequest('get', url))
+            schedule_list = resp_data['broadcasts']['elements']
+            for progr in schedule_list:
+                episode = progr['episode']
+                categories = episode.get('categories')
+                if episode.get('status') == 'available':
+                    url = 'https://www.bbc.co.uk/iplayer/episode/' + episode['id']
+                    stream = ''.join(('plugin://',
+                                      addonid,
+                                      '?url=', utf8_quote_plus(url),
+                                      '&mode=202'))  # &iconimage=&description=
+                else:
+                    stream = None
+                progr_list.append({
+                    'start': progr['scheduled_start'],
+                    'stop': progr['scheduled_end'],
+                    'title': episode.get('title'),
+                    'description': SelectSynopsis(episode.get('synopses')),
+                    'subtitle': episode.get('editorial_subtitle') or episode.get('subtitle'),
+                    'genre': categories[0] if categories else None,
+                    'image': episode.get('images', {}).get('standard', '').replace("{recipe}","832x468"),
+                    'date': episode.get('release_date_time'),
+                    'stream': stream
+                })
+            if pagenr * items_per_page >= resp_data['broadcasts']['count']:
+                break
+        epg['ipwww.' + chan_id] = progr_list
+    return {'version': 1, 'epg': epg}
