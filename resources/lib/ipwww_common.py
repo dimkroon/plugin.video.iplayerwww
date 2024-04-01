@@ -237,7 +237,9 @@ def download_subtitles(url):
                 old_split = start_split[0]
                 old_mil = start_mil_f
                 if entry:
-                    fw.write(entry)
+                    # Remove empty line breaks
+                    final = re.sub(r'\n\s*\n', '\n', entry)
+                    fw.write(final)
                     index += 1
 
     fw.close()
