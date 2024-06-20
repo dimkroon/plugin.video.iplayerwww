@@ -1050,7 +1050,7 @@ def GetJsonDataWithBBCid(url, retry=True):
 
 
 def ListWatching():
-    url = "https://www.bbc.co.uk/iplayer/watching"
+    url = "https://www.bbc.co.uk/iplayer/continue-watching"
     data = GetJsonDataWithBBCid(url)
     if not data:
         return
@@ -1066,7 +1066,7 @@ def ListWatching():
         item_data['description'] = item_data['name']
         remaining_seconds = watching_item.get('remaining')
         if remaining_seconds:
-            total_seconds = int(remaining_seconds * 100 / (100 - watching_item['progress']))
+            total_seconds = int(remaining_seconds * 100 / (100 - watching_item.get('progress', 0)))
             item_data['name'] = '{} - [I]{} min left[/I]'.format(episode.get('title', ''), int(remaining_seconds / 60))
             # Resume a little bit earlier, so it's easier to recognise where you've left off.
             item_data['resume_time'] = str(max(total_seconds - remaining_seconds - 10, 0))
