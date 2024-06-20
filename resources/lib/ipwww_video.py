@@ -763,7 +763,7 @@ def ParseJSON(programme_data, current_url):
                         AddMenuEntry('[B]%s: %s[/B]' % (name, series['title']['default']),
                                      series_url, 128, '', '', '')
         elif 'items' in programme_data:
-            # This must be Added or Watching.
+            # This must be Watchlist or Continue Watching.
             programmes = programme_data['items']
 
         if programmes:
@@ -1111,7 +1111,7 @@ def RemoveWatching(episode_id):
 
 
 def ListFavourites():
-    """AKA 'Watch List', FKA 'Added'."""
+    """AKA 'Watchlist', FKA 'Added'."""
     data = GetJsonDataWithBBCid("https://www.bbc.co.uk/iplayer/added")
     if not data:
         return
@@ -1132,8 +1132,8 @@ def ListFavourites():
 
 
 def RemoveFavourite(programme_id):
-    """Remove an item from the 'Added' list.
-    Handler for the context menu option 'Remove' on list items in 'Added'.
+    """Remove an item from the Watchlist.
+    Handler for the context menu option 'Remove' on list items in 'Watchlist'.
 
     Delete will never fail, even if programme_id is not on the list, or does not exist at all.
     """
