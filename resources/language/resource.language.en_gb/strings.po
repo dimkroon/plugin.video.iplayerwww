@@ -217,7 +217,7 @@ msgid "Watch Live"
 msgstr ""
 
 msgctxt "#30306"
-msgid "Watching"
+msgid "Continue Watching"
 msgstr ""
 
 msgctxt "#30307"
@@ -461,7 +461,7 @@ msgid "iPlayer: Red Button"
 msgstr ""
 
 msgctxt "#30520"
-msgid "iPlayer: Watching"
+msgid "iPlayer: Continue Watching"
 msgstr ""
 
 msgctxt "#30521"
