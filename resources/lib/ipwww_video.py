@@ -806,8 +806,6 @@ def ParseJSON(programme_data, current_url):
                 for item in entity:
                     if 'props' in item:
                         item = item.get("props")
-                    if not item:
-                        continue
                     ParseSingleJSON(None, item, None, added_playables, added_directories)
 
         if 'bundles' in programme_data:
