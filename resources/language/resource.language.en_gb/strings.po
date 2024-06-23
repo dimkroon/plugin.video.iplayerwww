@@ -221,7 +221,7 @@ msgid "Watching"
 msgstr ""
 
 msgctxt "#30307"
-msgid "Added"
+msgid "Watchlist"
 msgstr ""
 
 msgctxt "#30308"
@@ -465,7 +465,7 @@ msgid "iPlayer: Watching"
 msgstr ""
 
 msgctxt "#30521"
-msgid "iPlayer: Added"
+msgid "iPlayer: Watchlist"
 msgstr ""
 
 msgctxt "#30522"
