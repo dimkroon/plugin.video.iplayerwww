@@ -725,3 +725,14 @@ def CreateBaseDirectory(content_type):
         AddMenuEntry(translation(30325), 'url', 119,
                      icondir+'settings.png', '', '')
 
+
+class ProgressDlg(xbmcgui.DialogProgressBG):
+    def __init__(self, heading, msg=''):
+        super().__init__()
+        super().create(heading, msg)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
