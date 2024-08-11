@@ -368,7 +368,10 @@ def OpenRequest(method, url, *args, **kwargs):
         exit_on_error = kwargs.pop('exit_on_error', False)
         try:
             resp = session.request(method, url, *args, **kwargs)
-            resp.raise_for_status()
+            if resp.status_code == 404:
+                return ""
+            else:
+                resp.raise_for_status()
         except requests.exceptions.RequestException as e:
             if exit_on_error:
                 dialog = xbmcgui.Dialog()

@@ -248,47 +248,56 @@ def GetAtoZPage(url):
 
     Creates the list of programmes for one character.
     """
-    with ProgressDlg(translation(30319)) as pDialog:
-        current_url = 'https://www.bbc.co.uk/iplayer/a-z/%s' % url
-        # print("Opening "+current_url)
-        html = OpenURL(current_url)
+    if int(ADDON.getSetting('scrape_atoz')) == 1:
+        GetSingleAtoZPage(url)
+    else:
+        with ProgressDlg(translation(30319)) as pDialog:
+            GetSingleAtoZPage(url,pDialog)
 
-        total_pages = 1
-        current_page = 1
-        page_range = list(range(1))
 
-        json_data = ScrapeJSON(html)
-        if json_data:
-            ParseJSON(json_data, current_url)
-            if 'pagination' in json_data:
+def GetSingleAtoZPage(url, pDialog=None):
+    current_url = 'https://www.bbc.co.uk/iplayer/a-z/%s' % url
+    # print("Opening "+current_url)
+    html = OpenURL(current_url)
+
+    total_pages = 1
+    current_page = 1
+    page_range = list(range(1))
+
+    json_data = ScrapeJSON(html)
+    if json_data:
+        ParseJSON(json_data, current_url)
+        if 'pagination' in json_data:
+            if pDialog:
                 current_page = int(json_data['pagination']['currentPage'])
                 total_pages = int(json_data['pagination']['totalPages'])
                 percent = int(100*current_page/total_pages)
                 pDialog.update(percent,translation(30319))
-                # print('Current page: %s'%current_page)
-                # print('Total pages: %s'%total_pages)
-                if current_page<total_pages:
-                    split_page_url = current_url.split('?')
-                    page_base_url = split_page_url[0]
-                    for part in split_page_url[1:len(split_page_url)]:
-                        if not part.startswith('page'):
-                            page_base_url = page_base_url+'?'+part
-                    if '?' in page_base_url:
-                        page_base_url = page_base_url+'&page='
-                    else:
-                        page_base_url = page_base_url+'?page='
-                    for i in range(current_page+1,total_pages+1):
-                        current_url = page_base_url+str(i)
-                        # print("Opening "+current_url)
-                        html = OpenURL(current_url)
+            # print('Current page: %s'%current_page)
+            # print('Total pages: %s'%total_pages)
+            if current_page<total_pages:
+                split_page_url = current_url.split('?')
+                page_base_url = split_page_url[0]
+                for part in split_page_url[1:len(split_page_url)]:
+                    if not part.startswith('page'):
+                        page_base_url = page_base_url+'?'+part
+                if '?' in page_base_url:
+                    page_base_url = page_base_url+'&page='
+                else:
+                    page_base_url = page_base_url+'?page='
+                for i in range(current_page+1,total_pages+1):
+                    current_url = page_base_url+str(i)
+                    # print("Opening "+current_url)
+                    html = OpenURL(current_url)
 
-                        json_data = ScrapeJSON(html)
-                        if json_data:
-                            ParseJSON(json_data, current_url)
+                    json_data = ScrapeJSON(html)
+                    if json_data:
+                        ParseJSON(json_data, current_url)
+                    if pDialog:
                         percent = int(100*i/total_pages)
                         pDialog.update(percent,translation(30319))
-            else:
-                ParseJSON(json_data, current_url)
+        else:
+            ParseJSON(json_data, current_url)
 
 
 def GetMultipleEpisodes(url):
