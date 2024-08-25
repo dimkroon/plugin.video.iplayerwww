@@ -268,9 +268,9 @@ def GetSingleAtoZPage(url, pDialog=None):
     if json_data:
         ParseJSON(json_data, current_url)
         if 'pagination' in json_data:
+            current_page = int(json_data['pagination']['currentPage'])
+            total_pages = int(json_data['pagination']['totalPages'])
             if pDialog:
-                current_page = int(json_data['pagination']['currentPage'])
-                total_pages = int(json_data['pagination']['totalPages'])
                 percent = int(100*current_page/total_pages)
                 pDialog.update(percent,translation(30319))
             # print('Current page: %s'%current_page)
