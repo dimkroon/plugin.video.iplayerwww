@@ -372,6 +372,8 @@ def OpenRequest(method, url, *args, **kwargs):
     with requests.Session() as session:
         session.cookies = cookie_jar
         session.headers = headers
+        exit_on_error = kwargs.pop('exit_on_error', False)
+        kwargs.setdefault('timeout', (4, 10))
         try:
             resp = session.request(method, url, *args, **kwargs)
             resp.raise_for_status()
