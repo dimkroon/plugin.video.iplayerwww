@@ -366,6 +366,7 @@ def OpenRequest(method, url, *args, **kwargs):
         session.cookies = cookie_jar
         session.headers = headers
         exit_on_error = kwargs.pop('exit_on_error', False)
+        kwargs.setdefault('timeout', (4, 10))
         try:
             resp = session.request(method, url, *args, **kwargs)
             if resp.status_code == 404:
@@ -373,12 +374,12 @@ def OpenRequest(method, url, *args, **kwargs):
             else:
                 resp.raise_for_status()
         except requests.exceptions.RequestException as e:
+            xbmc.log(f"'{method}' request to '{url}' failed: {e!r}")
             if exit_on_error:
                 dialog = xbmcgui.Dialog()
                 dialog.ok(translation(30400), "%s" % e)
                 sys.exit(1)
             else:
-                xbmc.log(f"'{method}' request to '{url}' failed: {e!r}")
                 raise
         try:
             # Set ignore_discard to overcome issue of not having session
