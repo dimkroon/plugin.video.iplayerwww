@@ -37,6 +37,13 @@ class GeoBlockedError(IpwwwError):
     pass
 
 
+class WebRequestError(IpwwwError):
+    def __init__(self, err_msg, response):
+        self.status_code = response.status_code
+        self.content = response.content
+        super().__init__(err_msg)
+
+
 def tp(path):
     return xbmcvfs.translatePath(path)
 
@@ -369,24 +376,18 @@ def OpenRequest(method, url, *args, **kwargs):
         kwargs.setdefault('timeout', (4, 10))
         try:
             resp = session.request(method, url, *args, **kwargs)
-            if resp.status_code == 404:
-                return ""
-            else:
-                resp.raise_for_status()
+            resp.raise_for_status()
         except requests.exceptions.RequestException as e:
             xbmc.log(f"'{method}' request to '{url}' failed: {e!r}")
-            if exit_on_error:
-                dialog = xbmcgui.Dialog()
-                dialog.ok(translation(30400), "%s" % e)
-                sys.exit(1)
-            else:
-                raise
+            if isinstance(e, requests.HTTPError):
+                e = WebRequestError(str(e), e.response)
+            raise e
         try:
-            # Set ignore_discard to overcome issue of not having session
-            # as cookie_jar is reinitialised for each action.
             # Refreshed token cookies are set on intermediate requests.
             # Only save if there have been any.
             if resp.history:
+                # Set ignore_discard to overcome issue of not having session
+                # as cookie_jar is reinitialised for each action.
                 cookie_jar.save(ignore_discard=True)
         except:
             pass
@@ -394,7 +395,7 @@ def OpenRequest(method, url, *args, **kwargs):
 
 
 def OpenURL(url):
-    r = OpenRequest('get', url, exit_on_error=True)
+    r = OpenRequest('get', url)
     return unescape(r)
 
 
@@ -428,13 +429,8 @@ def DeleteUrl(url, **kwargs):
     with requests.Session() as session:
         session.cookies = cookie_jar
         session.headers = headers
-        try:
-            r = session.delete(url, **kwargs)
-            r.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            dialog = xbmcgui.Dialog()
-            dialog.ok(translation(30400), "%s" % e)
-            sys.exit(1)
+        r = session.delete(url, **kwargs)
+        r.raise_for_status()
         try:
             if r.history:
                 cookie_jar.save(ignore_discard=True)
@@ -443,7 +439,7 @@ def DeleteUrl(url, **kwargs):
 
 
 def PostJson(url, data):
-    return OpenRequest('post', url, json=data, exit_on_error=True)
+    return OpenRequest('post', url, json=data)
 
 
 def GetCookieJar():

@@ -12,11 +12,10 @@ import json
 from datetime import timedelta
 from operator import itemgetter
 
-from resources.lib.ipwww_common import translation, AddMenuEntry, OpenURL, OpenRequest, \
-                                       CheckLogin, CreateBaseDirectory, GetCookieJar, \
-                                       ParseImageUrl, download_subtitles, GeoBlockedError, \
-                                       iso_duration_2_seconds, PostJson, strptime, addonid, DeleteUrl, \
-                                       ProgressDlg
+from resources.lib.ipwww_common import (
+    translation, AddMenuEntry, OpenURL, OpenRequest, CheckLogin, CreateBaseDirectory,
+    GetCookieJar, ParseImageUrl, download_subtitles, GeoBlockedError, WebRequestError,
+    iso_duration_2_seconds, PostJson, strptime, addonid, DeleteUrl, ProgressDlg)
 from resources.lib import ipwww_progress
 
 import xbmc
@@ -258,7 +257,14 @@ def GetAtoZPage(url):
 def GetSingleAtoZPage(url, pDialog=None):
     current_url = 'https://www.bbc.co.uk/iplayer/a-z/%s' % url
     # print("Opening "+current_url)
-    html = OpenURL(current_url)
+    try:
+        html = OpenURL(current_url)
+    except WebRequestError as err:
+        # Ignore missing pages; there are simply no programmes starting with this letter.
+        if err.status_code == 404:
+            return
+        else:
+            raise
 
     total_pages = 1
     current_page = 1
