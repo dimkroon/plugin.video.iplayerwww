@@ -69,7 +69,7 @@ addoninfo = GetAddonInfo()
 DIR_USERDATA = tp(addoninfo["profile"])
 icondir = 'resource://resource.images.iplayerwww/media/'
 cookie_jar = None
-user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:110.0) Gecko/20100101 Firefox/110.0'
+user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0'
 headers = {'User-Agent': user_agent}
 
 
