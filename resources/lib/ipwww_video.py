@@ -877,13 +877,23 @@ def SelectImage(images):
            or images.get('portrait', 'DefaultFolder.png')).replace('{recipe}', '832x468')
 
 
-def ParseProgramme(progr_data):
-    return {
-        'url': 'https://www.bbc.co.uk/iplayer/episodes/' + progr_data['id'],
-        'name': '[B]{}[/B] - {} episodes available'.format(progr_data['title'], progr_data['count']),
+def ParseProgramme(progr_data, playable=False):
+    if playable:
+        programme = {
+            'url': 'https://www.bbc.co.uk/iplayer/episode/' + progr_data['id'],
+            'name': progr_data['title']
+        }
+    else:
+        programme = {
+            'url': 'https://www.bbc.co.uk/iplayer/episodes/' + progr_data['id'],
+            'name': '[B]{}[/B] - {} episodes available'.format(progr_data['title'], progr_data['count'])
+        }
+
+    programme.update({
         'iconimage': progr_data.get('images', {}).get('standard', 'DefaultFolder.png').replace('{recipe}', '832x468'),
         'description': SelectSynopsis(progr_data['synopses'])
-    }
+    })
+    return programme
 
 
 def ParseEpisode(episode_data):
@@ -1116,20 +1126,16 @@ def ListFavourites():
     data = GetJsonDataWithBBCid("https://www.bbc.co.uk/iplayer/added")
     if not data:
         return
-    has_episodes = False
+
     for added_item in data['items']['elements']:
         programme = added_item['programme']
         ct_mnu = [('Remove',
                    f'RunPlugin(plugin://plugin.video.iplayerwww?mode=302&episode_id={programme["id"]}&url=url)')]
         if programme['count'] == 1:
-            CheckAutoplay(context_mnu=ct_mnu, **ParseEpisode(programme['initial_children'][0]))
-            has_episodes = True
+            CheckAutoplay(context_mnu=ct_mnu, **ParseProgramme(programme, playable=True))
         else:
             AddMenuEntry(mode=128, subtitles_url='', context_mnu=ct_mnu, **ParseProgramme(programme))
-    if has_episodes:
-        SetSortMethods(xbmcplugin.SORT_METHOD_DATE)
-    else:
-        SetSortMethods()
+    SetSortMethods()
 
 
 def RemoveFavourite(programme_id):
