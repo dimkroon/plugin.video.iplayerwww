@@ -71,8 +71,8 @@
                                     <control type="toggle"/>
                                 </setting>
 			</group>
-            <group id="3" label="30111">
-                                <setting id="install_iptvmanager" label="30112" type="action" help="">
+            <group id="3" label="30250">
+                                <setting id="install_iptvmanager" label="30251" type="action" help="">
                                     <level>0</level>
                                     <data>InstallAddon(service.iptv.manager)</data>
                                     <control type="button" format="action">
@@ -82,7 +82,7 @@
                                         <dependency type="visible" on="property" name="infobool" operator="!is">System.HasAddon(service.iptv.manager)</dependency>
                                     </dependencies>
                                 </setting>
-                                <setting id="iptv.enabled" label="30113" type="boolean" help="">
+                                <setting id="iptv.enabled" label="30252" type="boolean" help="">
                                     <level>0</level>
                                     <default>true</default>
                                     <control type="toggle"/>
@@ -90,7 +90,7 @@
                                         <dependency type="visible" on="property" name="infobool">System.HasAddon(service.iptv.manager)</dependency>
                                     </dependencies>
                                 </setting>
-                                <setting id="iptvmanager-settings" label="30114" type="action" help="" parent="iptv.enabled">
+                                <setting id="iptvmanager-settings" label="30254" type="action" help="" parent="iptv.enabled">
                                     <data>Addon.OpenSettings(service.iptv.manager)</data>
                                     <dependencies>
                                         <dependency type="enable" setting="iptv.enabled">true</dependency>

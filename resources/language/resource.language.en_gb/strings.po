@@ -192,6 +192,26 @@ msgctxt "#30240"
 msgid "Subtitle CDN source"
 msgstr ""
 
+msgctxt "#30250"
+msgid "IPTV Manager integration"
+msgstr ""
+
+msgctxt "#30251"
+msgid "Install 'IPTV manager' addon"
+msgstr ""
+
+msgctxt "#30252"
+msgid "Enable IPTV Manager integration"
+msgstr ""
+
+msgctxt "#30253"
+msgid "Select channels"
+msgstr ""
+
+msgctxt "#30254"
+msgid "Go to IPTV manager settings..."
+msgstr ""
+
 msgctxt "#30300"
 msgid "Highlights"
 msgstr ""
