@@ -1336,6 +1336,11 @@ def ParseDASHStreams(stream_id):
             streams.append((tmp_sup, 1, url, '1280x720', protocol))
     source = int(ADDON.getSetting('subtitle_source'))
     for href, protocol, supplier in mediaselector[1]:
+        if '$Number$' in href:
+            # Found in live and red-button streams and requires `$Number$` to be replaced by
+            # a DASH segment id.
+            # Since DASH is handled by Inputstream Adaptive, live subtitles are not supported.
+            continue
         if 'akamai' in supplier and source in [0,1]:
             tmp_sup = 1
         elif 'limelight' in supplier and source in [0,2]:
@@ -1422,6 +1427,9 @@ def ScrapeAvailableStreams(url):
             elif (stream['kind'] == 'webcast'):
                 st.append(stream['id'])
                 ty.append(2)
+            elif (stream['kind'] == 'simulcast'):
+                st.append(stream['serviceId'])
+                ty.append(0)
             elif (stream['kind'] == 'signed'):
                 stream_id_sl = stream['id']
             elif (stream['kind'] == 'audio-described'):
