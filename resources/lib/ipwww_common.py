@@ -34,7 +34,13 @@ class IpwwwError(Exception):
 
 
 class GeoBlockedError(IpwwwError):
-    pass
+    def __init__(self, url):
+        super().__init__()
+        self.url = url
+    def __str__(self):
+        return translation(30401)
+    def __repr__(self):
+        return ''.join(("GeoBlockedError for url '",  self.url, '."'))
 
 
 class WebRequestError(IpwwwError):
@@ -312,7 +318,10 @@ def SignOutBBCiD():
     let's be nice and inform the Beeb as well.
     """
     sign_out_url="https://account.bbc.com/signout"
-    OpenURL(sign_out_url)
+    try:
+        OpenURL(sign_out_url)
+    except:
+        pass
     cookie_jar.clear()
     cookie_jar.save()
     xbmcgui.Dialog().notification(translation(30326), translation(30309))
@@ -380,7 +389,10 @@ def OpenRequest(method, url, *args, **kwargs):
         except requests.exceptions.RequestException as e:
             xbmc.log(f"'{method}' request to '{url}' failed: {e!r}")
             if isinstance(e, requests.HTTPError):
-                e = WebRequestError(str(e), e.response)
+                if e.response.status_code == 403:
+                    e = GeoBlockedError(url)
+                else:
+                    e = WebRequestError(str(e), e.response)
             raise e
         try:
             # Refreshed token cookies are set on intermediate requests.
@@ -518,7 +530,7 @@ def AddMenuEntry(name, url, mode, iconimage, description='', subtitles_url='', a
     else:
         isFolder = True
 
-    listitem = xbmcgui.ListItem(label=name, label2=description)
+    listitem = xbmcgui.ListItem(label=name, label2=description, offscreen=True)
     listitem.setArt({'icon':'DefaultFolder.png', 'thumb':iconimage})
 
     if mode in (201, 202, 203, 204, 205, 211, 212, 213):
@@ -567,7 +579,7 @@ def AddMenuEntry(name, url, mode, iconimage, description='', subtitles_url='', a
         listitem.setProperty("IsPlayable", 'false')
     else:
         listitem.setProperty("IsPlayable", str(not isFolder).lower())
-    listitem.setProperty("IsFolder", str(isFolder).lower())
+    listitem.setIsFolder(isFolder)
     listitem.setProperty("Property(Addon.Name)", "iPlayer WWW")
     xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),
                                 url=listitem_url, listitem=listitem, isFolder=isFolder)

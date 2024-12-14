@@ -1210,12 +1210,17 @@ def ListRecommendations(item_id=None):
 def PlayStream(name, url, iconimage, description='', subtitles_url='', episode_id=None, stream_id=None, replay_chan_id=''):
     if iconimage == '':
         iconimage = 'DefaultVideo.png'
-    html = OpenURL(url)
-    check_geo = re.search(
-        '<H1>Access Denied</H1>', html)
-    if check_geo or not html:
-        # print "Geoblock detected, raising error message"
-        raise GeoBlockedError(translation(30401))
+    try:
+        html = OpenURL(url)
+    except WebRequestError as err:
+        if err.status_code in (403, 404):
+            raise GeoBlockedError()
+
+    # check_geo = re.search(
+    #     '<H1>Access Denied</H1>', html)
+    # if check_geo or not html:
+    #     # print "Geoblock detected, raising error message"
+    #     raise GeoBlockedError(translation(30401))
     liz = xbmcgui.ListItem(name)
     liz.setArt({'icon':'DefaultVideo.png', 'thumb':iconimage})
     liz.setInfo(type='Video', infoLabels={'Title': name})
@@ -1347,9 +1352,9 @@ def ParseMediaselector(stream_id):
                                 if protocol == 'https':
                                     streams.append((href, protocol, supplier, transfer_format))
         elif 'result' in json_data:
+            # MediaSelector will probably have returned HTTP status 403, but keep this check just to be sure.
             if json_data['result'] == 'geolocation':
-                # print "Geoblock detected, raising error message"
-                raise GeoBlockedError(translation(30401))
+                raise GeoBlockedError()
     # print("Found streams:")
     # print(streams)
     # print(subtitles)
