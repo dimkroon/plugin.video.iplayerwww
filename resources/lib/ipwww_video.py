@@ -861,20 +861,32 @@ def SetSortMethods(*additional_methods):
 def SelectSynopsis(synopses):
     if synopses is None:
         return ''
-    return (synopses.get('editorial')
-            or synopses.get('medium')
-            or synopses.get('large')
-            or synopses.get('small')
-            or synopses.get('programme_small', ''))
+    try:
+        return (synopses.get('editorial')
+                or synopses.get('medium')
+                or synopses.get('large')
+                or synopses.get('small')
+                or synopses.get('programme_small')
+                or synopses.get('programmeSmall')      # Seen in bundles on iplayer's main page.
+                or synopses.get('live')
+                or '')
+    except AttributeError:
+        # Allow for the odd event that `synopses` is a single string.
+        if isinstance(synopses, str):
+            return synopses
+        else:
+            raise
 
 
 def SelectImage(images):
     if not images:
         return 'DefaultFolder.png'
     return(images.get('standard')
+           or images.get('default')
            or images.get('promotional')
            or images.get('promotional_with_logo')
-           or images.get('portrait', 'DefaultFolder.png')).replace('{recipe}', '832x468')
+           or images.get('portrait')
+           or 'DefaultFolder.png').replace('{recipe}', '832x468')
 
 
 def ParseProgramme(progr_data):
