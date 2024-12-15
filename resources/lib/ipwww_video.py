@@ -13,7 +13,7 @@ from datetime import timedelta
 from urllib.parse import parse_qsl
 
 from resources.lib.ipwww_common import (
-    translation, AddMenuEntry, OpenURL, OpenRequest, CheckLogin, CreateBaseDirectory,
+    translation, CreateMenuEntry, PushMenuItems, OpenURL, OpenRequest, CheckLogin, CreateBaseDirectory,
     download_subtitles, GeoBlockedError, WebRequestError, ADDON,
     duration_2_secs, PostJson, strptime, addonid, DeleteUrl, ProgressDlg, utf8_quote_plus)
 from resources.lib import ipwww_progress
@@ -39,8 +39,10 @@ def ListUHDTrial():
         ('uk_bbc_stream_045',  'UHD Trial 5'),
     ]
     iconimage = 'resource://resource.images.iplayerwww/media/red_button.png'
-    for id, name in channel_list:
-        AddMenuEntry(name, 205, iconimage, callb_kwargs=dict(name=name, channelname=id))
+    menu_items = [CreateMenuEntry(name, 205, iconimage, callb_kwargs=dict(name=name, channelname=id))
+                  for id, name in channel_list]
+    PushMenuItems(menu_items)
+
 
 
 def AddAvailableUHDTrialItem(name, channelname):
@@ -98,6 +100,7 @@ channel_list = [
 
 # ListLive creates menu entries for all live channels.
 def ListLive():
+    menu_items = []
     from urllib.parse import urlencode
     enabled_chans = ADDON.getSetting('enabled_tv_channels').split(';')
     enabled_chan_list = [chan for chan in channel_list if chan[0] in enabled_chans]
@@ -123,8 +126,11 @@ def ListLive():
                     ''.join((restart_action, '(plugin://', addonid, '?', querystring,
                              ', noresume)' if mode == 203 else ')'))
                     )]
-        AddMenuEntry(title, mode, iconimage, description=schedule, resume_time='0', context_mnu=ctx_mnu,
-                     callb_kwargs=dict(name=title, channelname=id, iconimage=iconimage))
+        menu_items.append(
+            CreateMenuEntry(title, mode, iconimage, description=schedule, resume_time='0', context_mnu=ctx_mnu,
+                            callb_kwargs=dict(name=title, channelname=id, iconimage=iconimage))
+        )
+    PushMenuItems(menu_items)
     xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=False)
     sys.exit()
 
@@ -152,7 +158,7 @@ def ListAtoZ():
                 page += 1
     else:
         for name, url in characters:
-            AddMenuEntry(name, 124, callb_kwargs=dict(url=url))
+            yield CreateMenuEntry(name, 124, callb_kwargs=dict(url=url))
 
 
 def GetAtoZPage(url):
@@ -162,7 +168,7 @@ def GetAtoZPage(url):
     """
     current_url = 'https://www.bbc.co.uk/iplayer/a-z/%s' % url
     try:
-        ScrapeEpisodes(current_url, True)
+        PushMenuItems(ScrapeEpisodes(current_url, True))
     except WebRequestError as err:
         # Ignore missing pages; there are simply no programmes starting with this letter.
         if err.status_code == 404:
@@ -212,7 +218,7 @@ def FirstShownToAired(first_shown):
 
 def GetEpisodes(url):
     new_url = 'https://www.bbc.co.uk/iplayer/episodes/%s' % url
-    ScrapeEpisodes(new_url)
+    PushMenuItems(ScrapeEpisodes(new_url))
 
 
 def GetGroup(url):
@@ -225,7 +231,7 @@ def GetGroup(url):
             pages.extend(MultiPageJson(page_url, range(1, total_pages)))
     for page_data, _ in pages:
         for episode_data in page_data['entities']['elements']:
-            parse_group_item(episode_data, page_data['entities'].get('group', {}).get('title'))
+            yield parse_group_item(episode_data, page_data['entities'].get('group', {}).get('title'))
 
 
 def parse_group_item(episode_data: dict, group_name: str):
@@ -251,10 +257,10 @@ def parse_group_item(episode_data: dict, group_name: str):
                 and 'editorial' in synopses):
             result = ParseEpisodeAsProgramme(episode_data)
             url = result.pop('url')
-            AddMenuEntry(mode=128, callb_kwargs={'page_url': url}, **result)
+            return CreateMenuEntry(mode=128, callb_kwargs={'page_url': url}, **result)
         else:
             result = ParseEpisodeWithContexMenu(episode_data)
-            CheckAutoplay(**result)
+            return CheckAutoplay(**result)
     else:
         xbmc.log(f"[IPWWW_VIDEO] unsupported type '{episode_data['type']}' of '{episode_data['title']}' in group '{group_name}'.", xbmc.LOGWARNING)
 
@@ -310,7 +316,7 @@ def ScrapeEpisodes(page_url, all_at_once=None):
         total_pages = current_page = 1
 
     for page_data in pages:
-        ParseJSON(*page_data)
+        yield from ParseJSON(*page_data)
 
     if not all_at_once and current_page < total_pages:
         base_url = re.sub(r'[?&]page=\d+', '', page_url, 1)
@@ -319,9 +325,9 @@ def ScrapeEpisodes(page_url, all_at_once=None):
         else:
             page_url = f'{base_url}?page={current_page + 1}'
 
-        AddMenuEntry("[COLOR ffffa500]%s >>[/COLOR]" % translation(30320), 128,
-                     item_position='bottom',
-                     callb_kwargs=dict(page_url=page_url))
+        yield CreateMenuEntry("[COLOR ffffa500]%s >>[/COLOR]" % translation(30320), 128,
+                              item_position='bottom',
+                              callb_kwargs=dict(page_url=page_url))
 
 
 def ListCategories():
@@ -335,7 +341,7 @@ def ListCategories():
     for url, name in match:
         if name in ("View all", "A-Z"):
             continue
-        AddMenuEntry(name, 126, callb_kwargs=dict(url=url))
+        yield CreateMenuEntry(name, 126, callb_kwargs=dict(url=url))
 
 
 def ListCategoryFilters(url):
@@ -353,9 +359,9 @@ def ListCategoryFilters(url):
         html,
         re.DOTALL)
     if match1:
-        AddMenuEntry('All', url, 126, callb_kwargs=dict(url=url))
+        yield CreateMenuEntry('All', url, 126, callb_kwargs=dict(url=url))
         for url, name in match1:
-            AddMenuEntry(name, url, 126, callb_kwargs=dict(url=url))
+            yield CreateMenuEntry(name, url, 126, callb_kwargs=dict(url=url))
     else:
         GetFilteredCategory(url)
 
@@ -363,7 +369,7 @@ def ListCategoryFilters(url):
 def GetFilteredCategory(url):
     """Parses the programmes available in the category view."""
     NEW_URL = 'https://www.bbc.co.uk' + url
-    ScrapeEpisodes(NEW_URL)
+    yield from ScrapeEpisodes(NEW_URL)
 
 
 def ListChannels():
@@ -384,7 +390,7 @@ def ListChannels():
     ]
     for id, img, name in channel_list:
         iconimage = 'resource://resource.images.iplayerwww/media/'+img+'.png'
-        AddMenuEntry(name, 120, iconimage, callb_kwargs=dict(chan_id=id, img_id=img))
+        yield CreateMenuEntry(name, 120, iconimage, callb_kwargs=dict(chan_id=id, img_id=img))
 
 
 def GetChannelPage(chan_id, img_id):
@@ -395,9 +401,9 @@ def GetChannelPage(chan_id, img_id):
     # A to Z folder
     iconimage = 'resource://resource.images.iplayerwww/media/' + img_id + '.png'
     url = "https://www.bbc.co.uk/%s/a-z" % chan_id
-    AddMenuEntry('[B]A - Z[/B]', 128, iconimage, item_position='top', callb_kwargs=dict(page_url=url))
+    yield CreateMenuEntry('[B]A - Z[/B]', 128, iconimage, item_position='top', callb_kwargs=dict(page_url=url))
     # Page contents
-    ScrapeEpisodes('https://www.bbc.co.uk/' + chan_id, True)
+    yield from ScrapeEpisodes('https://www.bbc.co.uk/' + chan_id, True)
 
 
 def id_from_url(url):
@@ -422,7 +428,7 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
 
     if 'episode' in item:
         # An episode in a programme/series folder, but could also be in a 'More Like This' folder.
-        CheckAutoplay(**ParseEpisode(item['episode'], is_standalone=False))
+        yield CheckAutoplay(**ParseEpisode(item['episode'], is_standalone=False))
         return
     else:
         if 'count' in item:
@@ -440,7 +446,7 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
                     if item.get('id') == ic['id']:
                         # This is just a playable, do not create a directory.
                         # Use the initial children to create the entry as it normally contains more information.
-                        ParseSingleJSON(meta, ic, name, added_playables, added_directories)
+                        yield from ParseSingleJSON(meta, ic, name, added_playables, added_directories)
                     else:
                         # Create a directory
                         programme_id = item.get('id')
@@ -517,22 +523,22 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
         # Folder from programmes A-Z
         if not main_url in added_directories:
             title = '[B]'+item['title']+'[/B] - '+num_episodes+' episodes available'
-            AddMenuEntry(title, 128, icon, synopsis, programme_id=programme_id, episode_id=episode_id,
-                         callb_kwargs=dict(page_url=main_url))
+            yield CreateMenuEntry(title, 128, icon, synopsis, programme_id=programme_id, episode_id=episode_id,
+                                  callb_kwargs=dict(page_url=main_url))
             added_directories.append(main_url)
 
     elif episodes_url:
         if not episodes_url in added_directories:
             if episodes_title=='':
                 episodes_title = title
-            AddMenuEntry('[B]%s[/B]' % (episodes_title), 128, icon, synopsis, programme_id=programme_id,
-                         episode_id=episode_id, callb_kwargs=dict(page_url=episodes_url))
+            yield CreateMenuEntry('[B]%s[/B]' % (episodes_title), 128, icon, synopsis, programme_id=programme_id,
+                                  episode_id=episode_id, callb_kwargs=dict(page_url=episodes_url))
             added_directories.append(main_url)
     elif main_url:
         # Playable from programmes A-Z
         if not main_url in added_playables:
-            CheckAutoplay(title , main_url, icon, synopsis, aired,
-                          programme_id=programme_id, episode_id=episode_id)
+            yield CheckAutoplay(title , main_url, icon, synopsis, aired,
+                                programme_id=programme_id, episode_id=episode_id)
             added_playables.append(main_url)
 
 
@@ -580,8 +586,8 @@ def parse_slices(available_slices, pgm_name, base_url, querystring):
         # The titles in slices on an episode page are dicts, as opposed to simple strings on a programme page.
         if isinstance(title, dict):
             title = title['default']
-        AddMenuEntry('[B]%s: %s[/B]' % (pgm_name, title), 128,
-                     callb_kwargs=dict(page_url=base_url + '?seriesId=' + more_like_this['id']))
+        yield CreateMenuEntry('[B]%s: %s[/B]' % (pgm_name, title), 128,
+                              callb_kwargs=dict(page_url=base_url + '?seriesId=' + more_like_this['id']))
 
     if len(series_list) > 1:
         # List series folders if there are more than one.
@@ -590,8 +596,8 @@ def parse_slices(available_slices, pgm_name, base_url, querystring):
             if isinstance(title, dict):
                 title = title['default']
             series_url = base_url + '?seriesId=' + series['id']
-            AddMenuEntry('[B]%s: %s[/B]' % (pgm_name, title), 128,
-                         callb_kwargs=dict(page_url=series_url))
+            yield CreateMenuEntry('[B]%s: %s[/B]' % (pgm_name, title), 128,
+                                  callb_kwargs=dict(page_url=series_url))
         return True
     else:
         # Only one series available, no series folder is created and keep parsing to show its episodes.
@@ -611,7 +617,8 @@ def ParseJSON(programme_data, current_url):
         header = programme_data.get('header')
         if header:
             name = header.get('title', '')
-            if parse_slices(header.get('availableSlices'), name, base_url, qs):
+            result = yield from parse_slices(header.get('availableSlices'), name, base_url, qs)
+            if result:
                 return
 
         programmes = None
@@ -628,14 +635,15 @@ def ParseJSON(programme_data, current_url):
                 programmes = programme_data['entities']['results']
                 if 'more-like-this' in current_url:
                     for item in programmes:
-                        CheckAutoplay(**ParseEpisodeWithContexMenu(item['episode']))
+                        yield CheckAutoplay(**ParseEpisodeWithContexMenu(item['episode']))
 
         elif 'relatedEpisodes' in programme_data:
             # This is an episode page treated as programme page.
             related_episodes = programme_data.get('relatedEpisodes')
             main_episode = programme_data.get('episode', {})
             name = main_episode.get('title', '')
-            if parse_slices(related_episodes.get('slices'), name, base_url, qs):
+            result = yield from parse_slices(related_episodes.get('slices'), name, base_url, qs)
+            if result is True:
                 return
             episodes = related_episodes.get('episodes')
             if episodes:
@@ -644,10 +652,10 @@ def ParseJSON(programme_data, current_url):
                 for item in episodes:
                     episode = item['episode']
                     if is_mlt is True:
-                        CheckAutoplay(**ParseEpisodeWithContexMenu(episode))
+                        yield CheckAutoplay(**ParseEpisodeWithContexMenu(episode))
                     else:
                         episode['tleo_id'] = programme_id
-                        CheckAutoplay(**ParseEpisode(episode, False))
+                        yield CheckAutoplay(**ParseEpisode(episode, False))
                 return
         elif 'items' in programme_data:
             # This must be Watchlist or Continue Watching.
@@ -667,14 +675,14 @@ def ParseJSON(programme_data, current_url):
                 if item_type == 'episode':
                     episode_dta = ParseEpisodeWithContexMenu(item)
                     if episode_dta:
-                        CheckAutoplay(**episode_dta)
+                        yield CheckAutoplay(**episode_dta)
                 elif item_type in ('programme', 'programme_large'):
                     is_playable, pgm_dta = ParseProgramme(item)
                     if is_playable:
-                        CheckAutoplay(**pgm_dta)
+                        yield CheckAutoplay(**pgm_dta)
                     else:
                         url = pgm_dta.pop('url')
-                        AddMenuEntry(mode=128, **pgm_dta, callb_kwargs=dict(page_url=url))
+                        yield CreateMenuEntry(mode=128, **pgm_dta, callb_kwargs=dict(page_url=url))
                 else:
                     ParseSingleJSON(meta, item, name, added_playables, added_directories)
 
@@ -689,15 +697,15 @@ def ParseJSON(programme_data, current_url):
                 id = entity.get('id')
                 if title and id:
                     # list the group folder
-                    AddMenuEntry('[B]%s[/B]' % title, 127,
-                                 description=translation(30314),
-                                 callb_kwargs=dict(url=id))
+                    yield CreateMenuEntry('[B]%s[/B]' % title, 127,
+                                          description=translation(30314),
+                                          callb_kwargs=dict(url=id))
                 else:
                     # List the group's content
                     for item in entity['entities']:
                         if 'props' in item:
                             item = item.get("props")
-                        ParseSingleJSON(None, item, None, added_playables, added_directories)
+                        yield from ParseSingleJSON(None, item, None, added_playables, added_directories)
 
         if 'highlights' in programme_data:
             highlights = programme_data.get('highlights')
@@ -706,7 +714,7 @@ def ParseJSON(programme_data, current_url):
                 for item in entity:
                     if 'props' in item:
                         item = item.get("props")
-                    parse_group_item(item, 'highlights')
+                    yield parse_group_item(item, 'highlights')
 
         if 'bundles' in programme_data:
             bundles = programme_data.get('bundles')
@@ -718,26 +726,26 @@ def ParseJSON(programme_data, current_url):
                     type = journey.get('type')
                     if title:
                         if id and (type == 'group'):
-                            AddMenuEntry('[B]%s[/B]' % title, 127,
-                                         description=translation(30314),
-                                         callb_kwargs=dict(url=id))
+                            yield CreateMenuEntry('[B]%s[/B]' % title, 127,
+                                                  description=translation(30314),
+                                                  callb_kwargs=dict(url=id))
                         elif id and (type == 'category'):
                             cat_url = f"/iplayer/categories/{id}"
-                            AddMenuEntry('[B]%s[/B]' % title, 126,
-                                         description=translation(30314),
-                                         callb_kwargs=dict(url=cat_url))
+                            yield CreateMenuEntry('[B]%s[/B]' % title, 126,
+                                                  description=translation(30314),
+                                                  callb_kwargs=dict(url=cat_url))
                 else:
                     bundle_id = bundle.get('id')
                     if bundle_id == 'hero':
                         for item in bundle['entities']:
                             episode_data = ParseHeroItem(item.get('episode'))
                             if episode_data:
-                                CheckAutoplay(**episode_data)
+                                yield CheckAutoplay(**episode_data)
                     elif bundle_id:
                         # Use 198 - ListRecommendations() to parse the bundle's content from the original page.
-                        AddMenuEntry('[B]%s[/B]' % title, 198,
-                                     description=translation(30314),
-                                     callb_kwargs=dict(item_id=bundle_id, page_url=current_url))
+                        yield CreateMenuEntry('[B]%s[/B]' % title, 198,
+                                              description=translation(30314),
+                                              callb_kwargs=dict(item_id=bundle_id, page_url=current_url))
 
         if 'data' in programme_data:
             # A totally different data structure, found on category pages where the root folder
@@ -746,7 +754,7 @@ def ParseJSON(programme_data, current_url):
                 if rail_data.get('props', {}).get('dataType') == 'contentCollectionData':
                     item_data = ParseRailItem(rail_data)
                     if item_data:
-                        AddMenuEntry(**item_data)
+                        yield CreateMenuEntry(**item_data)
 
     SetSortMethods(xbmcplugin.SORT_METHOD_DATE)
 
@@ -1032,15 +1040,15 @@ def GetAvailableStreams(name, url, iconimage, description, resume_time='', total
         description = stream_ids['description']
     # If we found standard streams, append them to the list.
     if stream_ids['stream_id_st']:
-        AddAvailableStreamsDirectory(name, stream_ids['stream_id_st'], iconimage, description,
+        yield from AddAvailableStreamsDirectory(name, stream_ids['stream_id_st'], iconimage, description,
                                      stream_ids['episode_id'], resume_time, total_time)
     # If we searched for Audio Described programmes and they have been found, append them to the list.
     if stream_ids['stream_id_ad'] or not stream_ids['stream_id_st']:
-        AddAvailableStreamsDirectory(name + ' - (Audio Described)', stream_ids['stream_id_ad'], iconimage,
+        yield from AddAvailableStreamsDirectory(name + ' - (Audio Described)', stream_ids['stream_id_ad'], iconimage,
                                      description, stream_ids['episode_id'], resume_time, total_time)
     # If we search for Signed programmes and they have been found, append them to the list.
     if stream_ids['stream_id_sl'] or not stream_ids['stream_id_st']:
-        AddAvailableStreamsDirectory(name + ' - (Signed)', stream_ids['stream_id_sl'], iconimage,
+        yield from AddAvailableStreamsDirectory(name + ' - (Signed)', stream_ids['stream_id_sl'], iconimage,
                                      description, stream_ids['episode_id'], resume_time, total_time)
 
 
@@ -1050,7 +1058,7 @@ def Search(search_entered):
         return False
 
     NEW_URL = 'https://www.bbc.co.uk/iplayer/search?q=%s' % utf8_quote_plus(search_entered)
-    ScrapeEpisodes(NEW_URL)
+    PushMenuItems(ScrapeEpisodes(NEW_URL))
 
 
 def AddAvailableLiveStreamItemSelector(name, channelname, iconimage=None, watch_from_start=False):
@@ -1091,8 +1099,8 @@ def AddAvailableLiveStreamsDirectory(name, channelname, iconimage, watch_from_st
             replay_chan_id = channelname
         else:
             replay_chan_id = ''
-        AddMenuEntry(title, 201, iconimage,
-                     callb_kwargs=dict(url=url, replay_chan_id=replay_chan_id))
+        yield CreateMenuEntry(title, 201, iconimage,
+                              callb_kwargs=dict(url=url, replay_chan_id=replay_chan_id))
 
 
 def GetJsonData(url):
@@ -1162,7 +1170,7 @@ def ListWatching():
             ct_menus.append((translation(30601),
                              f'RunPlugin(plugin://plugin.video.iplayerwww?mode=301&episode_id={programme_id})'))
 
-        CheckAutoplay(**item_data)
+        yield CheckAutoplay(**item_data)
 
 
 def CtxMnuViewAllEpisodes(programme_id: str = '', episode_id: str = ''):
@@ -1202,10 +1210,10 @@ def ListFavourites():
         # Prevent the creation of an "Add to watchlist" context menu item.
         pgm_data.pop('programme_id', None)
         if is_playable:
-            CheckAutoplay(context_mnu=ct_mnu, **pgm_data)
+            yield CheckAutoplay(context_mnu=ct_mnu, **pgm_data)
         else:
             url = pgm_data.pop('url')
-            AddMenuEntry(mode=128, context_mnu=ct_mnu, **pgm_data, callb_kwargs=dict(page_url=url))
+            yield CreateMenuEntry(mode=128, context_mnu=ct_mnu, **pgm_data, callb_kwargs=dict(page_url=url))
     SetSortMethods()
 
 
@@ -1255,7 +1263,7 @@ def ListRecommendations(item_id: str = '', page_url: str = 'https://www.bbc.co.u
                     item_data = ParseEpisodeWithContexMenu(episode)
                     if not item_data:
                         continue
-                    CheckAutoplay(**item_data)
+                    yield CheckAutoplay(**item_data)
                 SetSortMethods(xbmcplugin.SORT_METHOD_DATE)
                 return
     else:
@@ -1263,7 +1271,7 @@ def ListRecommendations(item_id: str = '', page_url: str = 'https://www.bbc.co.u
         for bundle in data['bundles']:
             bundle_id = bundle.get('id', '')
             if bundle_id in ('recommendations', 'if-you-liked'):
-                AddMenuEntry(bundle['title']['default'], 198, SelectImage(bundle.get('image')),
+                yield CreateMenuEntry(bundle['title']['default'], 198, SelectImage(bundle.get('image')),
                              SelectSynopsis(bundle.get('synopses')), callb_kwargs=dict(item_id=bundle_id))
 
 
@@ -1370,9 +1378,9 @@ def AddAvailableStreamsDirectory(name, stream_id, iconimage, description, episod
     suppliers = ['', 'Akamai', 'Limelight', 'Bidi','Cloudfront']
     for supplier, bitrate, url, resolution, protocol in streams[0]:
         title = name + ' - [I][COLOR ffd3d3d3]%s[/COLOR][/I]' % (suppliers[supplier])
-        AddMenuEntry(title, 201, iconimage, description, resume_time=resume_time, total_time=total_time,
-                     callb_kwargs=dict(url=url, subtitles_url=subtitles_url,
-                                       episode_id=episode_id, stream_id=stream_id))
+        yield CreateMenuEntry(title, 201, iconimage, description, resume_time=resume_time, total_time=total_time,
+                              callb_kwargs=dict(url=url, subtitles_url=subtitles_url,
+                                                episode_id=episode_id, stream_id=stream_id))
 
 
 def ParseMediaselector(stream_id):
@@ -1600,14 +1608,16 @@ def CheckAutoplay(name: str,
                   episode_id: str = "",
                   context_mnu: list[tuple[str, str]] | None = None):
     if ADDON.getSetting('streams_autoplay') == 'true':
-        AddMenuEntry(name, 202, iconimage, description, aired=aired, context_mnu=context_mnu,
-                     resume_time=resume_time, total_time=total_time, programme_id=programme_id,
-                     episode_id=episode_id, callb_kwargs=dict(url=url))
+        return CreateMenuEntry(
+            name, 202, iconimage, description, aired=aired, context_mnu=context_mnu,
+            resume_time=resume_time, total_time=total_time, programme_id=programme_id,
+            episode_id=episode_id, callb_kwargs=dict(url=url))
     else:
-        AddMenuEntry(name, 122, iconimage, description, aired=aired, context_mnu=context_mnu,
-                     programme_id=programme_id, episode_id=episode_id,
-                     callb_kwargs=dict(name=name, url=url, iconimage=iconimage, description=description,
-                                       resume_time=resume_time, total_time=total_time))
+        return CreateMenuEntry(
+            name, 122, iconimage, description, aired=aired, context_mnu=context_mnu,
+            programme_id=programme_id, episode_id=episode_id,
+            callb_kwargs=dict(name=name, url=url, iconimage=iconimage, description=description,
+                              resume_time=resume_time, total_time=total_time))
 
 
 def GetSchedules(channel_list):

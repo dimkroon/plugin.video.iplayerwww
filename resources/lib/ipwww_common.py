@@ -544,9 +544,9 @@ def strptime(dt_str: str, format: str):
     return datetime(*(time.strptime(dt_str, format)[0:6]))
 
 
-def AddMenuEntry(name, mode, iconimage=None, description='', aired=None, resume_time='', total_time='',
-                 programme_id=None, episode_id=None, context_mnu=None, item_position=None, callb_kwargs=None):
-    """Adds a new line to the Kodi list of playables.
+def CreateMenuEntry(name, mode, iconimage=None, description='', aired=None, resume_time='', total_time='',
+                    programme_id=None, episode_id=None, context_mnu=None, item_position=None, callb_kwargs=None):
+    """Build and return a Kodi ListItem to be used to list playables and folders.
     It is used in multiple ways in the plugin, which are distinguished by modes.
     """
 
@@ -628,9 +628,17 @@ def AddMenuEntry(name, mode, iconimage=None, description='', aired=None, resume_
     listitem.setProperty("Property(Addon.Name)", "iPlayer WWW")
     if item_position in ('top', 'bottom'):
         listitem.setProperty('SpecialSort', item_position)
-    xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),
-                                url=listitem_url, listitem=listitem, isFolder=isFolder)
-    xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
+
+    return listitem_url, listitem, isFolder
+
+
+def PushMenuItems(menu_items: list[tuple[str, xbmcgui.ListItem, bool]] | tuple[tuple[str, xbmcgui.ListItem, bool]]):
+    handle = int(sys.argv[1])
+    if not isinstance(menu_items, (list, tuple)):
+        # Collect all items produced by generators.
+        menu_items = list(menu_items)
+    xbmcplugin.addDirectoryItems(handle, menu_items)
+    xbmcplugin.setContent(handle, 'episodes')
     return True
 
 
@@ -664,116 +672,116 @@ def CreateBaseDirectory(content_type=None):
             live_mode = 203
         else:
             live_mode = 123
-        AddMenuEntry(translation(30329), 'cbeebies_hd', live_mode, icondir+'cbeebies_hd.png')
-        AddMenuEntry(translation(30330), 'cbbc_hd', live_mode, icondir+'cbbc_hd.png')
-        AddMenuEntry(translation(30331), 'cbeebies', 125, icondir+'cbeebies_hd.png')
-        AddMenuEntry(translation(30332), 'cbbc', 125, icondir+'cbbc_hd.png')
-        AddMenuEntry(translation(30333), 'p02pnn9d', 131, icondir+'cbeebies_hd.png')
+        yield CreateMenuEntry(translation(30329), 'cbeebies_hd', live_mode, icondir+'cbeebies_hd.png', '', ''),
+        yield CreateMenuEntry(translation(30330), 'cbbc_hd', live_mode, icondir+'cbbc_hd.png', '', ''),
+        yield CreateMenuEntry(translation(30331), 'cbeebies', 125, icondir+'cbeebies_hd.png', '', ''),
+        yield CreateMenuEntry(translation(30332), 'cbbc', 125, icondir+'cbbc_hd.png', '', ''),
+        yield CreateMenuEntry(translation(30333), 'p02pnn9d', 131, icondir+'cbeebies_hd.png', '', ''),
         return
 
     if content_type == "video":
         ShowLicenceWarning()
         if ADDON.getSetting("menu_video_highlights") == 'true':
-            AddMenuEntry(translation(30300), 106, icondir+'top_rated.png',
+            yield CreateMenuEntry(translation(30300), 106, icondir+'top_rated.png',
                          callb_kwargs=dict(highlights_url='iplayer'))
         if ADDON.getSetting("menu_video_channel_highlights") == 'true':
-            AddMenuEntry(translation(30317), 109, icondir+'top_rated.png')
+            yield CreateMenuEntry(translation(30317), 109, icondir+'top_rated.png')
         if ADDON.getSetting("menu_video_most_popular") == 'true':
-            AddMenuEntry(translation(30301), 105, icondir+'popular.png')
+            yield CreateMenuEntry(translation(30301), 105, icondir+'popular.png')
         if ADDON.getSetting("menu_video_az") == 'true':
-            AddMenuEntry(translation(30302), 102, icondir+'lists.png')
+            yield CreateMenuEntry(translation(30302), 102, icondir+'lists.png')
         if ADDON.getSetting("menu_video_categories") == 'true':
-            AddMenuEntry(translation(30303), 103, icondir+'lists.png')
+            yield CreateMenuEntry(translation(30303), 103, icondir+'lists.png')
         if ADDON.getSetting("menu_video_search") == 'true':
-            AddMenuEntry(translation(30304), 104, icondir+'search.png',
+            yield CreateMenuEntry(translation(30304), 104, icondir+'search.png',
                          callb_kwargs=dict(content_type='video'))
         if ADDON.getSetting("menu_video_live") == 'true':
-            AddMenuEntry(translation(30305), 101, icondir+'tv.png')
+            yield CreateMenuEntry(translation(30305), 101, icondir+'tv.png')
         if ADDON.getSetting("menu_video_uhd_trial") == 'true':
-            AddMenuEntry(translation(30335), 197, icondir+'tv.png')
+            yield CreateMenuEntry(translation(30335), 197, icondir+'tv.png')
         if ADDON.getSetting("menu_video_watching") == 'true':
-            AddMenuEntry(translation(30306), 107, icondir+'favourites.png')
+            yield CreateMenuEntry(translation(30306), 107, icondir+'favourites.png')
         if ADDON.getSetting("menu_video_added") == 'true':
-            AddMenuEntry(translation(30307), 108, icondir+'favourites.png')
+            yield CreateMenuEntry(translation(30307), 108, icondir+'favourites.png')
         if ADDON.getSetting("menu_video_recommendations") == 'true':
-            AddMenuEntry(translation(30336), 198, icondir+'top_rated.png')
-        AddMenuEntry(translation(30325), 119, icondir+'settings.png')
+            yield CreateMenuEntry(translation(30336), 198, icondir+'top_rated.png')
+        yield CreateMenuEntry(translation(30325), 119, icondir+'settings.png')
     elif content_type == "audio":
         if ADDON.getSetting("menu_radio_live") == 'true':
-            AddMenuEntry(translation(30321), 113, icondir+'live.png')
+            yield CreateMenuEntry(translation(30321), 113, icondir+'live.png')
         if ADDON.getSetting("menu_radio_az") == 'true':
-            AddMenuEntry(translation(30302), 112, icondir+'lists.png')
+            yield CreateMenuEntry(translation(30302), 112, icondir+'lists.png')
         if ADDON.getSetting("menu_radio_categories") == 'true':
-            AddMenuEntry(translation(30303), 114, icondir+'lists.png')
+            yield CreateMenuEntry(translation(30303), 114, icondir+'lists.png')
         if ADDON.getSetting("menu_radio_search") == 'true':
-            AddMenuEntry(translation(30304), 104, icondir+'search.png', callb_kwargs=dict(content_type='audio'))
+            yield CreateMenuEntry(translation(30304), 104, icondir+'search.png', callb_kwargs=dict(content_type='audio'))
         if ADDON.getSetting("menu_radio_most_popular") == 'true':
-            AddMenuEntry(translation(30301), 116, icondir+'popular.png')
+            yield CreateMenuEntry(translation(30301), 116, icondir+'popular.png')
         if ADDON.getSetting("menu_radio_added") == 'true':
-            AddMenuEntry(translation(30307), 117, icondir+'favourites.png')
+            yield CreateMenuEntry(translation(30307), 117, icondir+'favourites.png')
         """
         if ADDON.getSetting("menu_radio_following") == 'true':
-            AddMenuEntry(translation(30334), 199, icondir+'favourites.png')
+            yield CreateMenuEntry(translation(30334), 199, icondir+'favourites.png')
         """
-        AddMenuEntry(translation(30325), 119, icondir+'settings.png')
+        yield CreateMenuEntry(translation(30325), 119, icondir+'settings.png')
     else:
         ShowLicenceWarning()
         if ADDON.getSetting("menu_video_highlights") == 'true':
-            AddMenuEntry((translation(30323)+translation(30300)), 106, icondir+'top_rated.png',
-                         callb_kwargs=dict(highlights_url='iplayer'))
+            yield CreateMenuEntry((translation(30323)+translation(30300)), 106, icondir+'top_rated.png',
+                                  callb_kwargs=dict(highlights_url='iplayer'))
         if ADDON.getSetting("menu_video_channel_highlights") == 'true':
-            AddMenuEntry((translation(30323)+translation(30317)), 109,
-                         icondir+'top_rated.png')
+            yield CreateMenuEntry((translation(30323)+translation(30317)), 109,
+                                  icondir+'top_rated.png')
         if ADDON.getSetting("menu_video_most_popular") == 'true':
-            AddMenuEntry((translation(30323)+translation(30301)), 105,
-                         icondir+'popular.png')
+            yield CreateMenuEntry((translation(30323)+translation(30301)), 105,
+                                  icondir+'popular.png')
         if ADDON.getSetting("menu_video_az") == 'true':
-            AddMenuEntry((translation(30323)+translation(30302)), 102,
-                         icondir+'lists.png')
+            yield CreateMenuEntry((translation(30323)+translation(30302)), 102,
+                                  icondir+'lists.png')
         if ADDON.getSetting("menu_video_categories") == 'true':
-            AddMenuEntry((translation(30323)+translation(30303)), 103,
-                         icondir+'lists.png')
+            yield CreateMenuEntry((translation(30323)+translation(30303)), 103,
+                                  icondir+'lists.png')
         if ADDON.getSetting("menu_video_search") == 'true':
-            AddMenuEntry((translation(30323)+translation(30304)), 104, icondir+'search.png',
-                         callb_kwargs=dict(content_type='video'))
+            yield CreateMenuEntry((translation(30323)+translation(30304)), 104, icondir+'search.png',
+                                  callb_kwargs=dict(content_type='video'))
         if ADDON.getSetting("menu_video_live") == 'true':
-            AddMenuEntry((translation(30323)+translation(30305)), 101,
-                         icondir+'tv.png')
+            yield CreateMenuEntry((translation(30323)+translation(30305)), 101,
+                                  icondir+'tv.png')
         if ADDON.getSetting("menu_video_uhd_trial") == 'true':
-            AddMenuEntry((translation(30323)+translation(30335)), 197,
-                         icondir+'tv.png')
+            yield CreateMenuEntry((translation(30323)+translation(30335)), 197,
+                                  icondir+'tv.png')
         if ADDON.getSetting("menu_video_watching") == 'true':
-            AddMenuEntry((translation(30323)+translation(30306)), 107,
-                         icondir+'favourites.png')
+            yield CreateMenuEntry((translation(30323)+translation(30306)), 107,
+                                  icondir+'favourites.png')
         if ADDON.getSetting("menu_video_added") == 'true':
-            AddMenuEntry((translation(30323)+translation(30307)), 'url', 108,
-                         icondir+'favourites.png')
+            yield CreateMenuEntry((translation(30323)+translation(30307)), 'url', 108,
+                                  icondir+'favourites.png')
         if ADDON.getSetting("menu_video_recommendations") == 'true':
-            AddMenuEntry(translation(30323)+translation(30336), 198,
-                         icondir+'top_rated.png')
+            yield CreateMenuEntry(translation(30323)+translation(30336), 198,
+                                  icondir+'top_rated.png')
 
         if ADDON.getSetting("menu_radio_live") == 'true':
-            AddMenuEntry((translation(30324)+translation(30321)), 113,
-                         icondir+'live.png')
+            yield CreateMenuEntry((translation(30324)+translation(30321)), 113,
+                                  icondir+'live.png')
         if ADDON.getSetting("menu_radio_az") == 'true':
-            AddMenuEntry((translation(30324)+translation(30302)), 112,
-                         icondir+'lists.png')
+            yield CreateMenuEntry((translation(30324)+translation(30302)), 112,
+                                  icondir+'lists.png')
         if ADDON.getSetting("menu_radio_categories") == 'true':
-            AddMenuEntry((translation(30324)+translation(30303)), 114,
-                         icondir+'lists.png')
+            yield CreateMenuEntry((translation(30324)+translation(30303)), 114,
+                                  icondir+'lists.png')
         if ADDON.getSetting("menu_radio_search") == 'true':
-            AddMenuEntry((translation(30324)+translation(30304)), 104, icondir+'search.png',
-                         callb_kwargs=dict(content_type='audio'))
+            yield CreateMenuEntry((translation(30324)+translation(30304)), 104, icondir+'search.png',
+                                  callb_kwargs=dict(content_type='audio'))
         if ADDON.getSetting("menu_radio_most_popular") == 'true':
-            AddMenuEntry((translation(30324)+translation(30301)), 116,
+            yield CreateMenuEntry((translation(30324)+translation(30301)), 116,
                          icondir+'popular.png')
         if ADDON.getSetting("menu_radio_added") == 'true':
-            AddMenuEntry((translation(30324)+translation(30307)), 117,
+            yield CreateMenuEntry((translation(30324)+translation(30307)), 117,
                          icondir+'favourites.png')
         if ADDON.getSetting("menu_radio_following") == 'true':
-            AddMenuEntry((translation(30324)+translation(30334)), 199,
+            yield CreateMenuEntry((translation(30324)+translation(30334)), 199,
                          icondir+'favourites.png')
-        AddMenuEntry(translation(30325), 119, icondir+'settings.png')
+        yield CreateMenuEntry(translation(30325), 119, icondir+'settings.png')
 
 
 class ProgressDlg(xbmcgui.DialogProgressBG):
