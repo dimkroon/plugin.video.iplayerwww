@@ -900,19 +900,32 @@ def ParseProgramme(progr_data):
 
 def ParseEpisode(episode_data):
     title = episode_data.get('title', '')
+    if isinstance(title, dict):
+        title= title.get('default', '')
     subtitle = episode_data.get('subtitle')
+    if isinstance(subtitle, dict):
+        subtitle = subtitle.get('default')
     if subtitle:
         title = ' - '.join((title, subtitle))
-    version_data = episode_data['versions'][0]
-    description = SelectSynopsis(episode_data.get('synopses'))
+    description = SelectSynopsis(episode_data.get('synopses') or episode_data.get('synopsis'))
+    duration = ''
+    version_data = episode_data.get('versions')
+    if version_data:
+        version = version_data[0]
+        duration = iso_duration_2_seconds(version.get('duration', {}).get('value', '')) or ''
+        availability = version.get('availability', {}).get('remaining')
+        if isinstance(availability, dict):
+            availability = availability.get('text', '')
+        if availability:
+            description = '\n\n'.join((description, availability))
 
     return {
         'url': 'https://www.bbc.co.uk/iplayer/episode/' + episode_data['id'],
         'name': title,
-        'iconimage': SelectImage(episode_data.get('images')),
+        'iconimage': SelectImage(episode_data.get('images') or episode_data.get('image')),
         'description': description,
         'aired': episode_data.get('release_date_time', '').split('T')[0],
-        # 'total_time': str(iso_duration_2_seconds(version_data['duration']['value']))
+        'total_time': str(duration)
     }
 
 
@@ -1058,7 +1071,8 @@ def GetJsonDataWithBBCid(url, retry=True):
     if not json_data:
         xbmc.log(f"[ipwww_video] [Warning] No JSON data on page '{url}'.")
         return
-    if json_data['id']['signedIn']:
+    identity = json_data.get('id') or json_data['identity']
+    if identity['signedIn']:
         return json_data
 
     if retry:
@@ -1154,23 +1168,37 @@ def RemoveFavourite(programme_id):
     xbmc.executebuiltin('Container.Refresh')
 
 
-def ListRecommendations():
-    data = GetJsonDataWithBBCid('https://www.bbc.co.uk/iplayer/recommendations')
+def ListRecommendations(item_id=None):
+    data = GetJsonDataWithBBCid('https://www.bbc.co.uk/iplayer')
     if not data:
         return
-    for recommended_item in data['items']['elements']:
-        episode = recommended_item['episode']
-        item_data = ParseEpisode(episode)
-        if not item_data:
-            continue
-        tleo_id = episode['tleo_id']
-        if tleo_id != episode['id']:
-            all_episodes_link = 'https://www.bbc.co.uk/iplayer/episodes/' + tleo_id
-            item_data['context_mnu'] = [
-                (translation(30600),
-                 f'Container.Update(plugin://plugin.video.iplayerwww/?mode=128&url={all_episodes_link})')]
-        CheckAutoplay(**item_data)
-    SetSortMethods(xbmcplugin.SORT_METHOD_DATE)
+
+    if item_id and item_id != 'url':
+        # find the bundle and return its content from the main page:
+        for bundle in data['bundles']:
+            if bundle['id'] == item_id:
+                for recommended_item in bundle['entities']:
+                    episode = recommended_item['episode']
+                    item_data = ParseEpisode(episode)
+                    if not item_data:
+                        continue
+                    tleo_id = episode.get('tleo', {}).get('id')
+                    if tleo_id and tleo_id != episode['id']:
+                        all_episodes_link = 'https://www.bbc.co.uk/iplayer/episodes/' + tleo_id
+                        item_data['context_mnu'] = [
+                            (translation(30600),        # View all episodes
+                             f'Container.Update(plugin://plugin.video.iplayerwww/?mode=128&url={all_episodes_link})')]
+                    CheckAutoplay(**item_data)
+                SetSortMethods(xbmcplugin.SORT_METHOD_DATE)
+                return
+    else:
+        # Present the various rails of recommendations on iplayer's home page as folders in Kodi
+        for bundle in data['bundles']:
+            bundle_id = bundle.get('id', '')
+            if bundle_id in ('recommendations', 'if-you-liked'):
+                AddMenuEntry(bundle['title']['default'], bundle_id, 198,
+                             SelectImage(bundle.get('image')), SelectSynopsis(bundle.get('synopses')))
+
 
 
 def PlayStream(name, url, iconimage, description='', subtitles_url='', episode_id=None, stream_id=None, replay_chan_id=''):
