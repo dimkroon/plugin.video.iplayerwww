@@ -1123,7 +1123,7 @@ def RemoveWatching(episode_id):
 
 def ListFavourites():
     """AKA 'Watchlist', FKA 'Added'."""
-    data = GetJsonDataWithBBCid("https://www.bbc.co.uk/iplayer/added")
+    data = GetJsonDataWithBBCid("https://www.bbc.co.uk/iplayer/watchlist")
     if not data:
         return
 
