@@ -327,7 +327,7 @@
                                 </setting>
 			</group>
 		</category>
-        <category id ="iptv" label="30256" help="">
+        <category id ="iptv" label="30104" help="">
            <group id="1" label="30250">
                                 <setting id="install_iptvmanager" label="30251" type="action" help="">
                                     <level>0</level>
@@ -339,7 +339,7 @@
                                         <dependency type="visible" on="property" name="infobool" operator="!is">System.HasAddon(service.iptv.manager)</dependency>
                                     </dependencies>
                                 </setting>
-                                <setting id="iptv.enabled" label="30252" type="boolean" help="30255">
+                                <setting id="iptv.enabled" label="30252" type="boolean" help="30259">
                                     <level>0</level>
                                     <default>true</default>
                                     <control type="toggle"/>
@@ -398,7 +398,93 @@
                                         <hidevalue>true</hidevalue>
                                     </control>
                                 </setting>
-                                <setting id="iptvmanager_settings" label="30254" type="action" help="" parent="iptv.enabled">
+                                <setting id="iptv.radio_channels" type="list[string]" label="30254" help="30259" parent="iptv.enabled">
+                                    <level>0</level>
+                                    <default>bbc_radio_one;bbc_radio_two;bbc_radio_three;bbc_radio_fourfm;bbc_radio_five_live;bbc_6music</default>
+                                    <constraints>
+                                        <options>
+                                            <option label="BBC Radio 1">bbc_radio_one</option>
+                                            <option label="BBC Radio 1 Dance">bbc_radio_one_dance</option>
+                                            <option label="BBC Radio 1 Relax">bbc_radio_one_relax</option>
+                                            <option label="BBC Radio 1Xtra">bbc_1xtra</option>
+                                            <option label="BBC Radio 2">bbc_radio_two</option>
+                                            <option label="BBC Radio 3">bbc_radio_three</option>
+                                            <option label="BBC Radio 4">bbc_radio_fourfm</option>
+                                            <option label="BBC Radio 4 LW">bbc_radio_fourlw</option>
+                                            <option label="BBC Radio 4 Extra">bbc_radio_four_extra</option>
+                                            <option label="BBC Radio 5 Live">bbc_radio_five_live</option>
+                                            <option label="BBC Radio 5 Sports Extra">bbc_radio_five_live_sports_extra</option>
+                                            <option label="BBC Radio 6 Music">bbc_6music</option>
+                                            <option label="BBC Asian Network">bbc_asian_network</option>
+                                            <option label="BBC World Service">bbc_world_service</option>
+                                            <option label="BBC Radio Scotland">bbc_radio_scotland_fm</option>
+                                            <option label="BBC Radio Scotland Extra">bbc_radio_scotland_mw</option>
+                                            <option label="BBC Radio Orkney">bbc_radio_orkney</option>
+                                            <option label="BBC Radio Shetland">bbc_radio_shetland</option>
+                                            <option label="BBC Radio nan Gàidheal">bbc_radio_nan_gaidheal</option>
+                                            <option label="BBC Radio Ulster">bbc_radio_ulster</option>
+                                            <option label="BBC Radio Foyle">bbc_radio_foyle</option>
+                                            <option label="BBC Radio Wales">bbc_radio_wales_fm</option>
+                                            <option label="BBC Radio Wales Extra">bbc_radio_wales_am</option>
+                                            <option label="BBC Radio Cymru">bbc_radio_cymru</option>
+                                            <option label="BBC Radio Cymru 2">bbc_radio_cymru_2</option>
+                                            <option label="CBeebies Radio">cbeebies_radio</option>
+                                            <option label="BBC Radio Berkshire">bbc_radio_berkshire</option>
+                                            <option label="BBC Radio Bristol">bbc_radio_bristol</option>
+                                            <option label="BBC Radio Cambridgeshire">bbc_radio_cambridge</option>
+                                            <option label="BBC Radio Cornwall">bbc_radio_cornwall</option>
+                                            <option label="BBC Coventry &amp; Warwickshire">bbc_radio_coventry_warwickshire</option>
+                                            <option label="BBC Radio Cumbria">bbc_radio_cumbria</option>
+                                            <option label="BBC Radio Derby">bbc_radio_derby</option>
+                                            <option label="BBC Radio Devon">bbc_radio_devon</option>
+                                            <option label="BBC Essex">bbc_radio_essex</option>
+                                            <option label="BBC Radio Gloucestershire">bbc_radio_gloucestershire</option>
+                                            <option label="BBC Radio Guernsey">bbc_radio_guernsey</option>
+                                            <option label="BBC Hereford &amp; Worcester">bbc_radio_hereford_worcester</option>
+                                            <option label="BBC Radio Humberside">bbc_radio_humberside</option>
+                                            <option label="BBC Radio Jersey">bbc_radio_jersey</option>
+                                            <option label="BBC Radio Kent">bbc_radio_kent</option>
+                                            <option label="BBC Radio Lancashire">bbc_radio_lancashire</option>
+                                            <option label="BBC Radio Leeds">bbc_radio_leeds</option>
+                                            <option label="BBC Radio Leicester">bbc_radio_leicester</option>
+                                            <option label="BBC Radio Lincolnshire">bbc_radio_lincolnshire</option>
+                                            <option label="BBC Radio London">bbc_london</option>
+                                            <option label="BBC Radio Manchester">bbc_radio_manchester</option>
+                                            <option label="BBC Radio Merseyside">bbc_radio_merseyside</option>
+                                            <option label="BBC Newcastle">bbc_radio_newcastle</option>
+                                            <option label="BBC Radio Norfolk">bbc_radio_norfolk</option>
+                                            <option label="BBC Radio Northampton">bbc_radio_northampton</option>
+                                            <option label="BBC Radio Nottingham">bbc_radio_nottingham</option>
+                                            <option label="BBC Radio Oxford">bbc_radio_oxford</option>
+                                            <option label="BBC Radio Sheffield">bbc_radio_sheffield</option>
+                                            <option label="BBC Radio Shropshire">bbc_radio_shropshire</option>
+                                            <option label="BBC Radio Solent">bbc_radio_solent</option>
+                                            <option label="BBC Radio Solent Dorset">bbc_radio_solent_west_dorset</option>
+                                            <option label="BBC Somerset">bbc_radio_somerset_sound</option>
+                                            <option label="BBC Radio Stoke">bbc_radio_stoke</option>
+                                            <option label="BBC Radio Suffolk">bbc_radio_suffolk</option>
+                                            <option label="BBC Surrey">bbc_radio_surrey</option>
+                                            <option label="BBC Sussex">bbc_radio_sussex</option>
+                                            <option label="BBC Tees">bbc_tees</option>
+                                            <option label="BBC Three Counties Radio">bbc_three_counties_radio</option>
+                                            <option label="BBC Wiltshire">bbc_radio_wiltshire</option>
+                                            <option label="BBC WM">bbc_wm</option>
+                                            <option label="BBC Radio York">bbc_radio_york</option>
+                                        </options>
+                                        <allowempty>true</allowempty>
+                                        <delimiter>;</delimiter>
+                                    </constraints>
+                                    <dependencies>
+                                        <dependency type="enable" setting="iptv.enabled">true</dependency>
+                                        <dependency type="visible" on="property" name="infobool">System.HasAddon(service.iptv.manager)</dependency>
+                                    </dependencies>
+                                    <control type="list" format="string">
+                                        <heading>30254</heading>
+                                        <multiselect>true</multiselect>
+                                        <hidevalue>true</hidevalue>
+                                    </control>
+                                </setting>
+                                <setting id="iptvmanager_settings" label="30258" type="action" help="" parent="iptv.enabled">
                                     <data>Addon.OpenSettings(service.iptv.manager)</data>
                                     <dependencies>
                                         <dependency type="enable" setting="iptv.enabled">true</dependency>
