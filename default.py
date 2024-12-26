@@ -253,11 +253,11 @@ try:
 
     # Modes 401 - 499: Called as script, e.g. IPTV manager requesting channels
     elif mode == 401:
-        from resources.lib.iptvmanager import channels
+        from resources.lib.ipwww_iptv import channels
         channels(params['port'])
 
     elif mode == 402:
-        from resources.lib.iptvmanager import epg
+        from resources.lib.ipwww_iptv import epg
         epg(params['port'])
 
 except Exception as err:

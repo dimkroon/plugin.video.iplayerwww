@@ -212,6 +212,14 @@ msgctxt "#30254"
 msgid "Go to IPTV manager settings..."
 msgstr ""
 
+msgctxt "#30255"
+msgid "It may take a few hours before these settings take effect.\nTo force an update, select 'Refresh channels and guide now' in IPTV Manager's settings. You may also need te restart Kodi."
+msgstr ""
+
+msgctxt "#30256"
+msgid "Live TV Integration"
+msgstr ""
+
 msgctxt "#30300"
 msgid "Highlights"
 msgstr ""
