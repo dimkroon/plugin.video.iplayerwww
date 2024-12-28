@@ -4,8 +4,18 @@ from datetime import datetime, timedelta, timezone
 
 import xbmc
 
-from resources.lib.ipwww_video import channel_list as tv_channel_list, SelectSynopsis, SelectImage
-from resources.lib.ipwww_common import addonid, utf8_quote_plus, ADDON, OpenRequest
+from resources.lib.ipwww_video import (
+    channel_list as tv_channel_list,
+    SelectSynopsis,
+    SelectImage)
+from resources.lib.ipwww_radio import (
+    ScrapeJSON as ScrapeSoundsJson,
+    channel_list as radio_channel_list)
+from resources.lib.ipwww_common import (
+    addonid,
+    utf8_quote_plus,
+    ADDON,
+    OpenRequest)
 
 
 # IPTVManager class from https://github.com/add-ons/service.iptv.manager/wiki/Integration
@@ -33,26 +43,18 @@ class IPTVManager:
     @via_socket
     def send_channels(self):
         """Return JSON-STREAMS formatted python datastructure to IPTV Manager"""
-
-        chan_list = []
-        mode = '203' if ADDON.getSetting('streams_autoplay') == 'true' else '123'
-
-        for chan_id, chan_name, _ in enabled_tv_channels():
-            iconimage = f'resource://resource.images.iplayerwww/media/{chan_id}.png'
-            url = ''.join((
-                'plugin://', addonid,
-                '?url=', utf8_quote_plus(chan_id),
-                '&mode=', mode,
-                '&name=', utf8_quote_plus(chan_name),
-                '&iconimage', utf8_quote_plus(iconimage)
-            ))
-            chan_list.append({'id': 'ipwww.' + chan_id, 'name': chan_name, 'logo': iconimage, 'stream': url})
-        return {'version': 1, 'streams': chan_list}
+        tv_chans = enabled_channels(ADDON.getSetting('iptv.tv_channels').split(';'),
+                                    tv_channel_list)
+        radio_chans = enabled_channels(ADDON.getSetting('iptv.radio_channels').split(';'),
+                                       radio_channel_list)
+        return {'version': 1, 'streams': tv_chans + radio_chans}
 
     @via_socket
     def send_epg(self):
         """Return JSON-EPG formatted python data structure to IPTV Manager"""
-        return get_epg()
+        guide = tv_epg()
+        guide.update(radio_epg())
+        return {'version': 1, 'epg': guide}
 
 
 def channels(port):
@@ -72,22 +74,45 @@ def epg(port):
         xbmc.log(f"[ipwww_iptv] Error in iptvmanager.epg: {err!r}.", xbmc.LOGDEBUG)
 
 
-def enabled_tv_channels():
-    enabled_chan_ids = ADDON.getSetting('iptv.tv_channels').split(';')
+def enabled_channels(enabled_ids, all_channels):
+    if all_channels is radio_channel_list:
+        mode = '213'
+    else:
+        mode = '203'
     # BBC Two England has the same channel ID as BBC TWO (HD) and is filtered out to
-    # prevent both appearing in the TV list if BBC Two is enabled.
-    return [chan for chan in tv_channel_list if chan[0] in enabled_chan_ids and chan[1] != 'BBC Two England']
+    # prevent both appearing in the TV list when BBC Two is enabled.
+    enabled_chans = [chan for chan in all_channels if chan[0] in enabled_ids and chan[1] != 'BBC Two England']
+    chan_list = []
+    for chan in enabled_chans:
+        chan_id = chan[0]
+        chan_name = chan[1]
+        iconimage = f'resource://resource.images.iplayerwww/media/{chan_id}.png'
+        url = ''.join((
+            'plugin://', addonid,
+            '?url=', utf8_quote_plus(chan_id),
+            '&mode=', mode,
+            '&name=', utf8_quote_plus(chan_name),
+            '&iconimage', utf8_quote_plus(iconimage)
+        ))
+        chan_list.append(
+            {'id': 'ipwww.' + chan_id,
+             'name': chan_name,
+             'logo': iconimage,
+             'stream': url,
+             'radio': all_channels is radio_channel_list}
+        )
+    return chan_list
 
 
-def get_epg(chan_list=None):
-    """Get the full EPG from 7 days back to 7 days ahead.
+def tv_epg():
+    """Return the full TV EPG from 7 days back to 7 days ahead.
 
     """
     utc_now = datetime.now(timezone.utc)
     week_back = utc_now - timedelta(days=7)
     enabled_chan_ids = ADDON.getSetting('iptv.tv_channels').split(';')
     items_per_page = 200        # max allowed number
-    epg = {}
+    tv_guide = {}
     xbmc.log(f"[ipwww_iptv] Creating IPTV EPG for channels {enabled_chan_ids}.", xbmc.LOGDEBUG)
 
     for chan_id in enabled_chan_ids:
@@ -141,5 +166,66 @@ def get_epg(chan_list=None):
             if pagenr * items_per_page >= resp_data['broadcasts']['count']:
                 break
 
-        epg['ipwww.' + chan_id] = progr_list
-    return {'version': 1, 'epg': epg}
+        tv_guide['ipwww.' + chan_id] = progr_list
+    return tv_guide
+
+
+def get_next_revision():
+    """Request a html page from a radio station to get the current _next revision."""
+    data = ScrapeSoundsJson('https://www.bbc.co.uk/sounds/schedules/bbc_radio_one')
+    return data['buildId']
+
+
+def parse_radio_programme(programme):
+    """Parse a single programme from a radio schedule and return a dict in the
+    format required by IPTV Manager.
+
+    """
+    titles = programme['titles']
+    playable = programme.get('playable_item')
+    if playable:
+        release_date = playable.get('release', {}).get('date')
+        episode_id = playable['urn'].split(':')[-1]
+        url = 'https://www.bbc.co.uk/sounds/play/' + episode_id
+        stream = ''.join(('plugin://',
+                          addonid,
+                          '?url=', utf8_quote_plus(url),
+                          '&mode=212'))  # &iconimage=&description=
+    else:
+        release_date = None
+        stream = None
+
+    return {
+        'start': programme['start'],
+        'stop': programme['end'],
+        'title': titles.get('primary') or titles.get('secondary') or titles.get('tertiary'),
+        'description': SelectSynopsis(programme.get('synopses')),
+        'subtitle': programme.get('editorial_subtitle') or programme.get('subtitle'),
+        'image': programme.get('image_url', '').replace('{recipe}', '832x468'),
+        'date': release_date,
+        'stream': stream
+    }
+
+
+def radio_epg():
+    """Return the EPG of all enabled radio channels from 1 week ago up to next week."""
+    utc_now = datetime.now(timezone.utc)
+    enabled_chan_ids = ADDON.getSetting('iptv.radio-channels').split(';')
+    # Create a list of dates from one week back to next week.
+    dates_list = [(utc_now + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(-7, 8)]
+    _next_revision = get_next_revision()
+    radio_guide = {}
+    for chan_id in enabled_chan_ids:
+        last_start_time = ''
+        programme_list = []
+        for date in dates_list:
+            url = f'https://www.bbc.co.uk/sounds/_next/data/76968d6/schedules/{chan_id}/{date}.json'
+            data = json.loads(OpenRequest('get', url))
+            schedules = data['pageProps']['dehydratedState']['queries'][1]['state']['data']['data'][0]['data']
+            # The first programme of a day can be the same as the last of the previous day.
+            if schedules[0]['start'] == last_start_time:
+                schedules = schedules[1:]
+            programme_list.extend(parse_radio_programme(progr) for progr in schedules)
+            last_start_time = programme_list[-1]['start']
+        radio_guide['ipwww.' + chan_id] = programme_list
+    return radio_guide
