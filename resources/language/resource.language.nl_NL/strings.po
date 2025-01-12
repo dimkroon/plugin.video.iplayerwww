@@ -221,7 +221,7 @@ msgid "Watching"
 msgstr "Verder Kijken"
 
 msgctxt "#30307"
-msgid "Added"
+msgid "Watchlist"
 msgstr "Mijn Lijst"
 
 msgctxt "#30308"
@@ -238,7 +238,7 @@ msgstr "Niet gelukt - controleer de instellingen"
 
 msgctxt "#30311"
 msgid "BBCiD set-up required, please check settings."
-msgstr "BBC ID setup  vereis, controleer de instellingen"
+msgstr "BBC ID setup vereist, controleer de instellingen"
 
 msgctxt "#30312"
 msgid "Do you wish to sign in?"
@@ -294,7 +294,7 @@ msgstr "Radio"
 
 msgctxt "#30325"
 msgid "Sign out BBCiD"
-msgstr ""
+msgstr "Uitloggen"
 
 msgctxt "#30326"
 msgid "BBCiD Sign Out"
@@ -400,6 +400,22 @@ msgctxt "#30414"
 msgid "This BBC Sounds programme is available to play in the UK only."
 msgstr "Dit BBC Sounds programma is alleen beschikbaar in het Verenigd Koninkrijk."
 
+msgctxt "#30415"
+msgid "The start position of the current programme is not available.\nPlaying live now."
+msgstr "De startpositie van het huidige programma is niet beschikbaar.\nDe live stream wordt nu getoond."
+
+msgctxt "#30416"
+msgid "This programme started too long ago and cannot be played from the start anymore."
+msgstr "De programma begon te lang geleden kan niet meer vanaf het begin worden gestart."
+
+msgctxt "#30417"
+msgid "Play from 2 hours back"
+msgstr "Start van 2 uur terug"
+
+msgctxt "#30418"
+msgid "Play live"
+msgstr "Speel live"
+
 msgctxt "#30500"
 msgid "Display"
 msgstr ""
@@ -445,11 +461,11 @@ msgid "iPlayer: Red Button"
 msgstr ""
 
 msgctxt "#30520"
-msgid "iPlayer: Watching"
+msgid "iPlayer: Continue Watching"
 msgstr "iPLayer: Verder Kijken"
 
 msgctxt "#30521"
-msgid "iPlayer: Added"
+msgid "iPlayer: Watchlist"
 msgstr "iPLayer: Mijn Lijst"
 
 msgctxt "#30522"
