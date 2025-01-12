@@ -1227,6 +1227,9 @@ def PlayStream(name, url, iconimage, description='', subtitles_url='', episode_i
         # print "Downloading subtitles"
         subtitles_file = download_subtitles(subtitles_url)
         liz.setSubtitles([subtitles_file])
+        liz.setProperties({'subtitles.translate.type': '.srt',
+                           'subtitles.translate.orig_lang': 'en',
+                           'subtitles.translate.file': subtitles_file})
     if replay_chan_id:
         resume_point = GetLiveStartPosition(replay_chan_id)
         if resume_point is not None:
