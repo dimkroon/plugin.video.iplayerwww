@@ -252,7 +252,9 @@ try:
         Video.RemoveFavourite(episode_id)
 
 except Exception as err:
+    import traceback
     xbmcgui.Dialog().ok(Common.translation(30400), str(err))
+    xbmc.log('[ipwww.default][error] ' + traceback.format_exc())
     sys.exit(1)
 
 xbmcplugin.endOfDirectory(int(sys.argv[1]))
