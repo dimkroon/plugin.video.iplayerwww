@@ -242,7 +242,7 @@ try:
         Video.ListUHDTrial()
 
     elif mode == 198:
-        Video.ListRecommendations()
+        Video.ListRecommendations(url)
 
     # Modes 301 - 399: Context menu handlers
     elif mode == 301:
