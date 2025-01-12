@@ -1241,9 +1241,11 @@ def GetLiveStartPosition(chan_id):
 
     from datetime import datetime, timezone
 
-    # Apart from bbc_one_hd, schedules from HD channels must be requested by their non-HD counterpart.
-    if chan_id.endswith('_hd') and not chan_id.startswith('bbc_one'):
+    # Schedules from HD channels must be requested by their non-HD counterpart.
+    if chan_id.endswith('_hd'):
         chan_id = chan_id[:-3]
+    if chan_id == 'bbc_one':
+        chan_id = 'bbc_one_london'
 
     now = datetime.now(timezone.utc)
     resp = None
