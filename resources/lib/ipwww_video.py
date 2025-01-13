@@ -15,7 +15,8 @@ from operator import itemgetter
 from resources.lib.ipwww_common import (
     translation, AddMenuEntry, OpenURL, OpenRequest, CheckLogin, CreateBaseDirectory,
     GetCookieJar, ParseImageUrl, download_subtitles, GeoBlockedError, WebRequestError,
-    iso_duration_2_seconds, PostJson, strptime, addonid, DeleteUrl, ProgressDlg)
+    iso_duration_2_seconds, PostJson, strptime, addonid, DeleteUrl, ProgressDlg,
+    utf8_quote_plus)
 from resources.lib import ipwww_progress
 
 import xbmc
@@ -129,9 +130,7 @@ def AddAvailableUHDTrialItem(name, channelname):
     PlayStream(name, url, "", "", "")
 
 
-# ListLive creates menu entries for all live channels.
-def ListLive():
-    channel_list = [
+channel_list = [
         ('bbc_one_hd',                       'BBC One',                  'bbc_one_london'),
         ('bbc_two_england',                  'BBC Two',                  'bbc_two_england'),
         ('bbc_three_hd',                     'BBC Three',                'bbc_three'),
@@ -166,7 +165,12 @@ def ListLive():
         ('bbc_one_west_midlands',            'BBC One West Midlands',    'bbc_one_london'),
         ('bbc_one_yorks',                    'BBC One Yorks',            'bbc_one_london'),
     ]
+
+
+# ListLive creates menu entries for all live channels.
+def ListLive():
     from urllib.parse import urlencode
+
     schedules = GetSchedules(channel_list)
     for id, name, schedule_chan_id in channel_list:
         now_on, schedule = schedules.get(schedule_chan_id, ('', ''))
@@ -1594,3 +1598,4 @@ def GetSchedules(channel_list):
         res = [executor.submit(get_schedule, chan) for chan in schedule_channels]
         futures.wait(res)
     return dict(zip(schedule_channels, (r.result() for r in res)))
+
