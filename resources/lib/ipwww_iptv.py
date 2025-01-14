@@ -56,6 +56,7 @@ class IPTVManager:
 
 
 def channels(port):
+    xbmc.log(f"[ipwww_iptv] Sending IPTV channels list.", xbmc.LOGDEBUG)
     try:
         IPTVManager(int(port)).send_channels()
     except Exception as err:
@@ -68,11 +69,11 @@ def epg(port):
         IPTVManager(int(port)).send_epg()
     except Exception as err:
         # Catch all errors to prevent default() showing an error message
-        xbmc.log(f"[ipwww_iptv] Error in iptvmanager.epg: {err!r}.", xbmc.LOGERROR)
+        xbmc.log(f"[ipwww_iptv] Error in iptvmanager.epg: {err!r}.", xbmc.LOGDEBUG)
 
 
 def enabled_tv_channels():
-    enabled_chan_ids = ADDON.getSetting('iptv.tv-channels').split(';')
+    enabled_chan_ids = ADDON.getSetting('iptv.tv_channels').split(';')
     # BBC Two England has the same channel ID as BBC TWO (HD) and is filtered out to
     # prevent both appearing in the TV list if BBC Two is enabled.
     return [chan for chan in tv_channel_list if chan[0] in enabled_chan_ids and chan[1] != 'BBC Two England']
@@ -84,9 +85,10 @@ def get_epg(chan_list=None):
     """
     utc_now = datetime.now(timezone.utc)
     week_back = utc_now - timedelta(days=7)
-    enabled_chan_ids = ADDON.getSetting('iptv.channels').split(';')
+    enabled_chan_ids = ADDON.getSetting('iptv.tv_channels').split(';')
     items_per_page = 200        # max allowed number
     epg = {}
+    xbmc.log(f"[ipwww_iptv] Creating IPTV EPG for channels {enabled_chan_ids}.", xbmc.LOGDEBUG)
 
     for chan_id in enabled_chan_ids:
         # There are no schedules specifically for HD channels.

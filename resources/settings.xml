@@ -347,7 +347,7 @@
                                         <dependency type="visible" on="property" name="infobool">System.HasAddon(service.iptv.manager)</dependency>
                                     </dependencies>
                                 </setting>
-                                <setting id="iptv.tv-channels" type="list[string]" label="30253" help="30255" parent="iptv.enabled">
+                                <setting id="iptv.tv_channels" type="list[string]" label="30253" help="30255" parent="iptv.enabled">
                                     <level>0</level>
                                     <default>bbc_one_hd;bbc_two_england;bbc_three_hd;bbc_four_hd</default>
                                     <constraints>
@@ -398,7 +398,7 @@
                                         <hidevalue>true</hidevalue>
                                     </control>
                                 </setting>
-                                <setting id="iptvmanager-settings" label="30254" type="action" help="" parent="iptv.enabled">
+                                <setting id="iptvmanager_settings" label="30254" type="action" help="" parent="iptv.enabled">
                                     <data>Addon.OpenSettings(service.iptv.manager)</data>
                                     <dependencies>
                                         <dependency type="enable" setting="iptv.enabled">true</dependency>
