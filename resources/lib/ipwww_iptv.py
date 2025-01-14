@@ -72,7 +72,7 @@ def epg(port):
 
 
 def enabled_tv_channels():
-    enabled_chan_ids = ADDON.getSetting('iptv.tv-channels').split(';')
+    enabled_chan_ids = ADDON.getSetting('iptv.tv_channels').split(';')
     # BBC Two England has the same channel ID as BBC TWO (HD) and is filtered out to
     # prevent both appearing in the TV list if BBC Two is enabled.
     return [chan for chan in tv_channel_list if chan[0] in enabled_chan_ids and chan[1] != 'BBC Two England']
@@ -84,7 +84,7 @@ def get_epg(chan_list=None):
     """
     utc_now = datetime.now(timezone.utc)
     week_back = utc_now - timedelta(days=7)
-    enabled_chan_ids = ADDON.getSetting('iptv.channels').split(';')
+    enabled_chan_ids = ADDON.getSetting('iptv.tv_channels').split(';')
     items_per_page = 200        # max allowed number
     epg = {}
 
