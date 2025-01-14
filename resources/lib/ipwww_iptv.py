@@ -56,6 +56,7 @@ class IPTVManager:
 
 
 def channels(port):
+    xbmc.log(f"[ipwww_iptv] Sending IPTV channels list.", xbmc.LOGDEBUG)
     try:
         IPTVManager(int(port)).send_channels()
     except Exception as err:
@@ -68,7 +69,7 @@ def epg(port):
         IPTVManager(int(port)).send_epg()
     except Exception as err:
         # Catch all errors to prevent default() showing an error message
-        xbmc.log(f"[ipwww_iptv] Error in iptvmanager.epg: {err!r}.", xbmc.LOGERROR)
+        xbmc.log(f"[ipwww_iptv] Error in iptvmanager.epg: {err!r}.", xbmc.LOGDEBUG)
 
 
 def enabled_tv_channels():
@@ -87,6 +88,7 @@ def get_epg(chan_list=None):
     enabled_chan_ids = ADDON.getSetting('iptv.tv_channels').split(';')
     items_per_page = 200        # max allowed number
     epg = {}
+    xbmc.log(f"[ipwww_iptv] Creating IPTV EPG for channels {enabled_chan_ids}.", xbmc.LOGDEBUG)
 
     for chan_id in enabled_chan_ids:
         # There are no schedules specifically for HD channels.
