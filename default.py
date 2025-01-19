@@ -115,7 +115,7 @@ try:
 
     elif mode == 104:
         from resources.lib.ipwww_search import list_search_terms
-        list_search_terms(url, 130 if url == 'video' else 140)
+        list_search_terms(url, 130 if url == 'video' else 140, keyword)
 
     elif mode == 105:
         Video.ListMostPopular()
