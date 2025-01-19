@@ -481,7 +481,8 @@ def strptime(dt_str: str, format: str):
 
 
 def AddMenuEntry(name, url, mode, iconimage, description='', subtitles_url='', aired=None, resolution=None,
-                 resume_time='', total_time='', episode_id='', stream_id='', context_mnu=None, replay_chan_id=''):
+                 resume_time='', total_time='', episode_id='', stream_id='', context_mnu=None, replay_chan_id='',
+                 item_position=None):
     """Adds a new line to the Kodi list of playables.
     It is used in multiple ways in the plugin, which are distinguished by modes.
     """
@@ -512,8 +513,8 @@ def AddMenuEntry(name, url, mode, iconimage, description='', subtitles_url='', a
     # Modes 201-299 will create a new playable line, otherwise create a new directory line.
     if mode in (201, 202, 203, 204, 205, 211, 212, 213, 214):
         isFolder = False
-    # Mode 119 is not a folder, but it is also not a playable.
-    elif mode == 119:
+    # Modes 119 (sign out) and 190 (new search) are not folders, but are also not playable.
+    elif mode in (119, 190):
         isFolder = False
     else:
         isFolder = True
@@ -562,13 +563,15 @@ def AddMenuEntry(name, url, mode, iconimage, description='', subtitles_url='', a
         listitem.setProperty('inputstream', 'inputstream.adaptive')
         listitem.setProperty('inputstream.adaptive.manifest_type', 'mpd')
 
-    # Mode 119 is not a folder, but it is also not a playable.
-    if mode == 119:
+    # Modes 119 (sign out) and 190 (new search) are not folders, but also not playable.
+    if mode in (119, 190):
         listitem.setProperty("IsPlayable", 'false')
     else:
         listitem.setProperty("IsPlayable", str(not isFolder).lower())
     listitem.setProperty("IsFolder", str(isFolder).lower())
     listitem.setProperty("Property(Addon.Name)", "iPlayer WWW")
+    if item_position in ('top', 'bottom'):
+        listitem.setProperty('SpecialSort', item_position)
     xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),
                                 url=listitem_url, listitem=listitem, isFolder=isFolder)
     xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
@@ -627,7 +630,7 @@ def CreateBaseDirectory(content_type):
         if ADDON.getSetting("menu_video_categories") == 'true':
             AddMenuEntry(translation(30303), 'url', 103, icondir+'lists.png', '', '')
         if ADDON.getSetting("menu_video_search") == 'true':
-            AddMenuEntry(translation(30304), 'url', 104, icondir+'search.png', '', '')
+            AddMenuEntry(translation(30304), 'video', 104, icondir+'search.png', '', '')
         if ADDON.getSetting("menu_video_live") == 'true':
             AddMenuEntry(translation(30305), 'url', 101, icondir+'tv.png', '', '')
         # if ADDON.getSetting("menu_video_red_button") == 'true':
@@ -649,7 +652,7 @@ def CreateBaseDirectory(content_type):
         if ADDON.getSetting("menu_radio_categories") == 'true':
             AddMenuEntry(translation(30303), 'url', 114, icondir+'lists.png', '', '')
         if ADDON.getSetting("menu_radio_search") == 'true':
-            AddMenuEntry(translation(30304), 'url', 115, icondir+'search.png', '', '')
+            AddMenuEntry(translation(30304), 'audio', 104, icondir+'search.png', '', '')
         if ADDON.getSetting("menu_radio_most_popular") == 'true':
             AddMenuEntry(translation(30301), 'url', 116, icondir+'popular.png', '', '')
         if ADDON.getSetting("menu_radio_added") == 'true':
@@ -680,7 +683,7 @@ def CreateBaseDirectory(content_type):
             AddMenuEntry((translation(30323)+translation(30303)), 'url', 103,
                          icondir+'lists.png', '', '')
         if ADDON.getSetting("menu_video_search") == 'true':
-            AddMenuEntry((translation(30323)+translation(30304)), 'url', 104,
+            AddMenuEntry((translation(30323)+translation(30304)), 'video', 104,
                          icondir+'search.png', '', '')
         if ADDON.getSetting("menu_video_live") == 'true':
             AddMenuEntry((translation(30323)+translation(30305)), 'url', 101,
@@ -711,7 +714,7 @@ def CreateBaseDirectory(content_type):
             AddMenuEntry((translation(30324)+translation(30303)), 'url', 114,
                          icondir+'lists.png', '', '')
         if ADDON.getSetting("menu_radio_search") == 'true':
-            AddMenuEntry((translation(30324)+translation(30304)), 'url', 115,
+            AddMenuEntry((translation(30324)+translation(30304)), 'audio', 104,
                          icondir+'search.png', '', '')
         if ADDON.getSetting("menu_radio_most_popular") == 'true':
             AddMenuEntry((translation(30324)+translation(30301)), 'url', 116,
@@ -736,3 +739,4 @@ class ProgressDlg(xbmcgui.DialogProgressBG):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
