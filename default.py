@@ -276,6 +276,10 @@ try:
         from resources.lib.ipwww_iptv import epg
         epg(params['port'])
 
+    elif mode == 305:
+        from resources.lib.ipwww_search import edit_search_term
+        edit_search_term(url, keyword)
+
 
 except Exception as err:
     import traceback
