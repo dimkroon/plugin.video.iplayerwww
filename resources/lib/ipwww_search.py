@@ -3,6 +3,7 @@ import os
 import json
 import time
 from datetime import datetime
+from urllib.parse import urlencode
 
 import xbmc
 import xbmcplugin
@@ -140,7 +141,8 @@ def list_search_terms(content_type: str, mode: int):
     txt_edit = translation(30604)
     txt_clear = translation(30605)
 
-    AddMenuEntry('New Search', url=content_type, mode=190, iconimage=icon, item_position='top')
+    AddMenuEntry('New Search', mode=190, iconimage=icon, item_position='top',
+                 callb_kwargs=dict(content_type=content_type, keyword='new_search'))
     for keyword, date_info in search_history:
         ctx_mnu = [(txt_remove,
                     'RunPlugin(plugin://plugin.video.iplayerwww?'
@@ -153,7 +155,8 @@ def list_search_terms(content_type: str, mode: int):
                     f'mode=304&content_type={content_type}&url=clear)')
                    ]
         date_created = datetime.fromtimestamp(date_info['created']).strftime('%Y-%m-%d')
-        AddMenuEntry(keyword, keyword, mode, icon, aired=date_created, context_mnu=ctx_mnu)
+        AddMenuEntry(keyword, mode, icon, aired=date_created, context_mnu=ctx_mnu,
+                     callb_kwargs=dict(content_type=content_type, keyword=keyword))
     ipwww_video.SetSortMethods(xbmcplugin.SORT_METHOD_DATE)
 
 
@@ -161,7 +164,9 @@ def new_search(content_type, mode):
     keyword = open_keyboard(content_type)
     if keyword:
         SearchHistory(content_type).append(keyword)
-        xbmc.executebuiltin(f'Container.Update(plugin://plugin.video.iplayerwww?mode={mode}&url={keyword})')
+        params = {'mode': mode,
+                  'callb_kwargs': {'content_type': content_type, 'keyword': keyword}}
+        xbmc.executebuiltin(f'Container.Update(plugin://plugin.video.iplayerwww?{urlencode(params)})')
 
 
 def do_search(content_type, keyword):

@@ -4,16 +4,12 @@ from __future__ import division
 
 import os
 import sys
-import urllib
+from urllib.parse import parse_qsl
 
 import xbmc
 import xbmcaddon
 import xbmcgui
 import xbmcplugin
-
-
-plugin_handle = int(sys.argv[1])
-ADDON = xbmcaddon.Addon(id='plugin.video.iplayerwww')
 
 try:
     from resources.lib import ipwww_common as Common
@@ -25,103 +21,40 @@ except ImportError as error:
     raise
 
 
-def get_params():
-    param = {}
-    paramstring = sys.argv[2]
-    if len(paramstring) >= 2:
-        params = sys.argv[2]
-        cleanedparams = params.replace('?', '')
-        if (params[len(params) - 1] == '/'):
-            params = params[0:len(params) - 2]
-        pairsofparams = cleanedparams.split('&')
-        param = {}
-        for i in range(len(pairsofparams)):
-            splitparams = {}
-            splitparams = pairsofparams[i].split('=')
-            if (len(splitparams)) == 2:
-                param[splitparams[0]] = splitparams[1]
-    return param
-
-
-params = get_params()
-content_type = None
-url = None
-name = None
-mode = None
-iconimage = None
-description = None
-subtitles_url = None
-keyword = None
-
-
-try:
-    content_type = Common.utf8_unquote_plus(params["content_type"])
-except:
-    pass
-try:
-    url = Common.utf8_unquote_plus(params["url"])
-except:
-    pass
-try:
-    name = Common.utf8_unquote_plus(params["name"])
-except:
-    pass
-try:
-    iconimage = Common.utf8_unquote_plus(params["iconimage"])
-except:
-    pass
-try:
-    mode = int(params["mode"])
-except:
-    pass
-try:
-    description = Common.utf8_unquote_plus(params["description"])
-except:
-    pass
-try:
-    subtitles_url = Common.utf8_unquote_plus(params["subtitles_url"])
-except:
-    pass
-try:
-    keyword = Common.utf8_unquote_plus(params["keyword"])
-except:
-    pass
-
-episode_id = Common.utf8_unquote_plus(params.get('episode_id', ''))
-stream_id = Common.utf8_unquote_plus(params.get('stream_id', ''))
-resume_time = params.get('resume_time', '')
-total_time = params.get('total_time', '')
-watch_from_start = params.get('watch_from_start') == 'True'
-replay_chan_id = params.get('replay_chan_id', '')
-
+plugin_handle = int(sys.argv[1])
+ADDON = xbmcaddon.Addon(id='plugin.video.iplayerwww')
+params = dict(parse_qsl(sys.argv[2].lstrip('?')))
+mode = int(params.pop('mode', 0))
 
 try:
     # These are the modes which tell the plugin where to go.
-    if mode == 1:
-        Common.KidsMode()
+    if not mode:
+        Common.CreateBaseDirectory(**params)
 
-    elif mode is None:
-        Common.CreateBaseDirectory(content_type)
+    elif mode == 1:
+        Common.KidsMode()
 
     # Modes 101-119 will create a main directory menu entry
     elif mode == 101:
-        Video.ListLive()
+        Video.ListLive(**params)
 
     elif mode == 102:
-        Video.ListAtoZ()
+        Video.ListAtoZ(**params)
 
     elif mode == 103:
-        Video.ListCategories()
+        Video.ListCategories(**params)
 
     elif mode == 104:
         from resources.lib.ipwww_search import list_search_terms
-        list_search_terms(url, 130 if url == 'video' else 140, keyword)
+
+        mode = 130 if params.get('content_type') == 'video' else 140
+        list_search_terms(mode=mode, **params)
 
     elif mode == 105:
         Video.ListMostPopular()
 
     elif mode == 106:
-        Video.ListHighlights(url)
+        Video.ListHighlights(**params)
 
     elif mode == 107:
         Video.ListWatching()
@@ -161,111 +94,111 @@ try:
 
         # Modes 121-199 will create a sub directory menu entry
     elif mode == 121:
-        Video.GetEpisodes(url)
+        Video.GetEpisodes(**params)
 
     elif mode == 122:
-        Video.GetAvailableStreams(name, url, iconimage, description, resume_time, total_time)
+        Video.GetAvailableStreams(**params)
 
     elif mode == 123:
-        Video.AddAvailableLiveStreamsDirectory(name, url, iconimage, watch_from_start)
+        Video.AddAvailableLiveStreamsDirectory(**params)
 
     elif mode == 124:
-        Video.GetAtoZPage(url)
+        Video.GetAtoZPage(**params)
 
     elif mode == 125:
-        Video.ListCategoryFilters(url)
+        Video.ListCategoryFilters(**params)
 
     elif mode == 126:
-        Video.GetFilteredCategory(url)
+        Video.GetFilteredCategory(**params)
 
     elif mode == 127:
-        Video.GetGroup(url)
+        Video.GetGroup(**params)
 
     elif mode == 128:
-        Video.ScrapeEpisodes(url)
+        Video.ScrapeEpisodes(**params)
 
     elif mode == 129:
-        Video.AddAvailableRedButtonDirectory(name, url)
+        Video.AddAvailableRedButtonDirectory(**params)
 
     elif mode == 130:
         from resources.lib.ipwww_search import do_search
-        do_search(content_type='video', keyword=url)
+        do_search(**params)
 
     elif mode == 131:
-        Radio.GetEpisodes(url)
+        Radio.GetEpisodes(**params)
 
     elif mode == 132:
-        Radio.GetAvailableStreams(name, url, iconimage, description)
+        Radio.GetAvailableStreams(**params)
 
     elif mode == 133:
-        Radio.AddAvailableLiveStreamsDirectory(name, url, iconimage)
+        Radio.AddAvailableLiveStreamsDirectory(**params)
 
     elif mode == 134:
-        Video.ScrapeAtoZEpisodes(url)
+        Video.ScrapeAtoZEpisodes(**params)
 
     elif mode == 136:
-        Radio.GetPage(url)
+        Radio.GetPage(**params)
 
     elif mode == 137:
-        Radio.GetCategoryPage(url)
+        Radio.GetCategoryPage(**params)
 
     elif mode == 138:
-        Radio.GetAtoZPage(url)
+        Radio.GetAtoZPage(**params)
 
     elif mode == 139:
-        Video.ScrapeEpisodes(url)
+        Video.ScrapeEpisodes(**params)
 
     elif mode == 140:
         from resources.lib.ipwww_search import do_search
-        do_search(content_type='audio', keyword=url)
+        do_search(**params)
 
     elif mode == 190:
         from resources.lib.ipwww_search import new_search
-        new_search(content_type=url, mode=130 if url == 'video' else 140)
+        new_search(**params)
 
     # Modes 201-299 will create a playable menu entry, not a directory
     elif mode == 201:
-        Video.PlayStream(name, url, iconimage, description, subtitles_url, episode_id, stream_id, replay_chan_id)
+        Video.PlayStream(**params)
 
     elif mode == 202:
-        Video.AddAvailableStreamItem(name, url, iconimage, description)
+        Video.AddAvailableStreamItem(**params)
 
     elif mode == 203:
-        Video.AddAvailableLiveStreamItemSelector(name, url, iconimage, watch_from_start)
+        Video.AddAvailableLiveStreamItemSelector(**params)
 
     elif mode == 204:
-        Video.AddAvailableRedButtonItem(name, url)
+        Video.AddAvailableRedButtonItem(**params)
 
     elif mode == 205:
-        Video.AddAvailableUHDTrialItem(name, url)
+        Video.AddAvailableUHDTrialItem(**params)
 
     elif mode == 211:
-        Radio.PlayStream(name, url, iconimage, description, subtitles_url)
+        Radio.PlayStream(**params)
 
     elif mode == 212:
-        Radio.AddAvailableStreamItem(name, url, iconimage, description)
+        Radio.AddAvailableStreamItem(**params)
 
     elif mode == 213:
-        Radio.AddAvailableLiveStreamItem(name, url, iconimage)
+        Radio.AddAvailableLiveStreamItem(**params)
 
     elif mode == 197:
         Video.ListUHDTrial()
 
     elif mode == 198:
-        Video.ListRecommendations(url)
+        Video.ListRecommendations(**params)
 
     # Modes 301 - 399: Context menu handlers
     elif mode == 301:
-        Video.RemoveWatching(episode_id)
+        Video.RemoveWatching(**params)
 
     elif mode == 302:
-        Video.RemoveFavourite(episode_id)
+        Video.RemoveFavourite(**params)
 
     # Reserved mode 303 for AddFavourite
 
     elif mode == 304:
         from resources.lib.ipwww_search import context_menu
-        context_menu(content_type, url, keyword)
+        context_menu(**params)
 
     # Modes 401 - 499: Called as script, e.g. IPTV manager requesting channels
     elif mode == 401:
@@ -278,7 +211,7 @@ try:
 
     elif mode == 305:
         from resources.lib.ipwww_search import edit_search_term
-        edit_search_term(url, keyword)
+        edit_search_term(**params)
 
 
 except Exception as err:
