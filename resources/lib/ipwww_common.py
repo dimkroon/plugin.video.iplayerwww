@@ -4,6 +4,7 @@ import sys
 import os
 import re
 from datetime import datetime
+from urllib.parse import urlencode
 
 import requests
 from requests.packages import urllib3
@@ -492,30 +493,23 @@ def strptime(dt_str: str, format: str):
     return datetime(*(time.strptime(dt_str, format)[0:6]))
 
 
-def AddMenuEntry(name, url, mode, iconimage, description='', subtitles_url='', aired=None, resolution=None,
-                 resume_time='', total_time='', episode_id='', stream_id='', context_mnu=None, replay_chan_id='',
-                 item_position=None):
+def AddMenuEntry(name, mode, iconimage=None, description='', aired=None, resume_time='', total_time='',
+                 context_mnu=None, item_position=None, callb_kwargs=None):
     """Adds a new line to the Kodi list of playables.
     It is used in multiple ways in the plugin, which are distinguished by modes.
     """
 
     if not iconimage:
         iconimage="DefaultFolder.png"
-    listitem_url = ''.join((
-        sys.argv[0],
-        "?url=", utf8_quote_plus(url),
-        "&mode=", str(mode),
-        "&name=", utf8_quote_plus(name),
-        "&iconimage=", utf8_quote_plus(iconimage),
-        "&description=", utf8_quote_plus(description),
-        "&subtitles_url=", utf8_quote_plus(subtitles_url),
-        "&episode_id=", utf8_quote_plus(episode_id),
-        "&stream_id=", utf8_quote_plus(stream_id),
-        "&resume_time=", resume_time,
-        "&total_time=", total_time,
-        "&replay_chan_id=", replay_chan_id))
-    if mode in (101,203,113,213):
-        listitem_url = listitem_url + "&time=" + str(time.time())
+
+    if callb_kwargs is None:
+        callb_kwargs = {'mode': mode}
+    else:
+        callb_kwargs['mode'] = mode
+
+    querstring = urlencode(callb_kwargs)
+    listitem_url = ''.join((sys.argv[0], '?', querstring))
+
     if aired:
         ymd = aired.split('-')
         date_string = ymd[2] + '/' + ymd[1] + '/' + ymd[0]
@@ -571,7 +565,6 @@ def AddMenuEntry(name, url, mode, iconimage, description='', subtitles_url='', a
 
     video_streaminfo = {'codec': 'h264'}
     if not isFolder:
-        listitem.setPath(url)
         listitem.setProperty('inputstream', 'inputstream.adaptive')
         listitem.setProperty('inputstream.adaptive.manifest_type', 'mpd')
 
@@ -614,131 +607,132 @@ def ShowLicenceWarning():
             ADDON.setSetting("licence_warning_shown", 'true')
 
 
-def CreateBaseDirectory(content_type):
+def CreateBaseDirectory(content_type=None):
     if ADDON.getSetting('kids_password'):
         if ADDON.getSetting('streams_autoplay') == 'true':
             live_mode = 203
         else:
             live_mode = 123
-        AddMenuEntry(translation(30329), 'cbeebies_hd', live_mode, icondir+'cbeebies_hd.png', '', '')
-        AddMenuEntry(translation(30330), 'cbbc_hd', live_mode, icondir+'cbbc_hd.png', '', '')
-        AddMenuEntry(translation(30331), 'cbeebies', 125, icondir+'cbeebies_hd.png', '', '')
-        AddMenuEntry(translation(30332), 'cbbc', 125, icondir+'cbbc_hd.png', '', '')
-        AddMenuEntry(translation(30333), 'p02pnn9d', 131, icondir+'cbeebies_hd.png', '', '')
+        AddMenuEntry(translation(30329), 'cbeebies_hd', live_mode, icondir+'cbeebies_hd.png')
+        AddMenuEntry(translation(30330), 'cbbc_hd', live_mode, icondir+'cbbc_hd.png')
+        AddMenuEntry(translation(30331), 'cbeebies', 125, icondir+'cbeebies_hd.png')
+        AddMenuEntry(translation(30332), 'cbbc', 125, icondir+'cbbc_hd.png')
+        AddMenuEntry(translation(30333), 'p02pnn9d', 131, icondir+'cbeebies_hd.png')
         return
 
     if content_type == "video":
         ShowLicenceWarning()
         if ADDON.getSetting("menu_video_highlights") == 'true':
-            AddMenuEntry(translation(30300), 'iplayer', 106, icondir+'top_rated.png', '', '')
+            AddMenuEntry(translation(30300), 106, icondir+'top_rated.png',
+                         callb_kwargs=dict(highlights_url='iplayer'))
         if ADDON.getSetting("menu_video_channel_highlights") == 'true':
-            AddMenuEntry(translation(30317), 'url', 109, icondir+'top_rated.png', '', '')
+            AddMenuEntry(translation(30317), 109, icondir+'top_rated.png')
         if ADDON.getSetting("menu_video_most_popular") == 'true':
-            AddMenuEntry(translation(30301), 'url', 105, icondir+'popular.png', '', '')
+            AddMenuEntry(translation(30301), 105, icondir+'popular.png')
         if ADDON.getSetting("menu_video_az") == 'true':
-            AddMenuEntry(translation(30302), 'url', 102, icondir+'lists.png', '', '')
+            AddMenuEntry(translation(30302), 102, icondir+'lists.png')
         if ADDON.getSetting("menu_video_channel_az") == 'true':
-            AddMenuEntry(translation(30327), 'url', 120, icondir+'lists.png', '', '')
+            AddMenuEntry(translation(30327), 120, icondir+'lists.png')
         if ADDON.getSetting("menu_video_categories") == 'true':
-            AddMenuEntry(translation(30303), 'url', 103, icondir+'lists.png', '', '')
+            AddMenuEntry(translation(30303), 103, icondir+'lists.png')
         if ADDON.getSetting("menu_video_search") == 'true':
-            AddMenuEntry(translation(30304), 'video', 104, icondir+'search.png', '', '')
+            AddMenuEntry(translation(30304), 104, icondir+'search.png',
+                         callb_kwargs=dict(content_type='video'))
         if ADDON.getSetting("menu_video_live") == 'true':
-            AddMenuEntry(translation(30305), 'url', 101, icondir+'tv.png', '', '')
+            AddMenuEntry(translation(30305), 101, icondir+'tv.png')
         # if ADDON.getSetting("menu_video_red_button") == 'true':
         #     AddMenuEntry(translation(30328), 'url', 118, icondir+'tv.png', '', '')
         if ADDON.getSetting("menu_video_uhd_trial") == 'true':
-            AddMenuEntry(translation(30335), 'url', 197, icondir+'tv.png', '', '')
+            AddMenuEntry(translation(30335), 197, icondir+'tv.png')
         if ADDON.getSetting("menu_video_watching") == 'true':
-            AddMenuEntry(translation(30306), 'url', 107, icondir+'favourites.png', '', '')
+            AddMenuEntry(translation(30306), 107, icondir+'favourites.png')
         if ADDON.getSetting("menu_video_added") == 'true':
-            AddMenuEntry(translation(30307), 'url', 108, icondir+'favourites.png', '', '')
+            AddMenuEntry(translation(30307), 108, icondir+'favourites.png')
         if ADDON.getSetting("menu_video_recommendations") == 'true':
-            AddMenuEntry(translation(30336), 'url', 198, icondir+'top_rated.png', '', '')
-        AddMenuEntry(translation(30325), 'url', 119, icondir+'settings.png',  '', '')
+            AddMenuEntry(translation(30336), 198, icondir+'top_rated.png')
+        AddMenuEntry(translation(30325), 119, icondir+'settings.png')
     elif content_type == "audio":
         if ADDON.getSetting("menu_radio_live") == 'true':
-            AddMenuEntry(translation(30321), 'url', 113, icondir+'live.png', '', '')
+            AddMenuEntry(translation(30321), 113, icondir+'live.png')
         if ADDON.getSetting("menu_radio_az") == 'true':
-            AddMenuEntry(translation(30302), 'url', 112, icondir+'lists.png', '', '')
+            AddMenuEntry(translation(30302), 112, icondir+'lists.png')
         if ADDON.getSetting("menu_radio_categories") == 'true':
-            AddMenuEntry(translation(30303), 'url', 114, icondir+'lists.png', '', '')
+            AddMenuEntry(translation(30303), 114, icondir+'lists.png')
         if ADDON.getSetting("menu_radio_search") == 'true':
-            AddMenuEntry(translation(30304), 'audio', 104, icondir+'search.png', '', '')
+            AddMenuEntry(translation(30304), 104, icondir+'search.png', callb_kwargs=dict(content_type='audio'))
         if ADDON.getSetting("menu_radio_most_popular") == 'true':
-            AddMenuEntry(translation(30301), 'url', 116, icondir+'popular.png', '', '')
+            AddMenuEntry(translation(30301), 116, icondir+'popular.png')
         if ADDON.getSetting("menu_radio_added") == 'true':
-            AddMenuEntry(translation(30307), 'url', 117, icondir+'favourites.png', '', '')
+            AddMenuEntry(translation(30307), 117, icondir+'favourites.png')
         """
         if ADDON.getSetting("menu_radio_following") == 'true':
-            AddMenuEntry(translation(30334), 'url', 199, icondir+'favourites.png', '', '')
+            AddMenuEntry(translation(30334), 199, icondir+'favourites.png')
         """
-        AddMenuEntry(translation(30325), 'url', 119, icondir+'settings.png', '', '')
+        AddMenuEntry(translation(30325), 119, icondir+'settings.png')
     else:
         ShowLicenceWarning()
         if ADDON.getSetting("menu_video_highlights") == 'true':
-            AddMenuEntry((translation(30323)+translation(30300)), 'iplayer', 106,
-                         icondir+'top_rated.png', '', '')
+            AddMenuEntry((translation(30323)+translation(30300)), 106, icondir+'top_rated.png',
+                         callb_kwargs=dict(highlights_url='iplayer'))
         if ADDON.getSetting("menu_video_channel_highlights") == 'true':
-            AddMenuEntry((translation(30323)+translation(30317)), 'url', 109,
-                         icondir+'top_rated.png', '', '')
+            AddMenuEntry((translation(30323)+translation(30317)), 109,
+                         icondir+'top_rated.png')
         if ADDON.getSetting("menu_video_most_popular") == 'true':
-            AddMenuEntry((translation(30323)+translation(30301)), 'url', 105,
-                         icondir+'popular.png', '', '')
+            AddMenuEntry((translation(30323)+translation(30301)), 105,
+                         icondir+'popular.png')
         if ADDON.getSetting("menu_video_az") == 'true':
-            AddMenuEntry((translation(30323)+translation(30302)), 'url', 102,
-                         icondir+'lists.png', '', '')
+            AddMenuEntry((translation(30323)+translation(30302)), 102,
+                         icondir+'lists.png')
         if ADDON.getSetting("menu_video_channel_az") == 'true':
-            AddMenuEntry((translation(30323)+translation(30327)), 'url', 120,
-                         icondir+'lists.png', '', '')
+            AddMenuEntry((translation(30323)+translation(30327)), 120,
+                         icondir+'lists.png')
         if ADDON.getSetting("menu_video_categories") == 'true':
-            AddMenuEntry((translation(30323)+translation(30303)), 'url', 103,
-                         icondir+'lists.png', '', '')
+            AddMenuEntry((translation(30323)+translation(30303)), 103,
+                         icondir+'lists.png')
         if ADDON.getSetting("menu_video_search") == 'true':
-            AddMenuEntry((translation(30323)+translation(30304)), 'video', 104,
-                         icondir+'search.png', '', '')
+            AddMenuEntry((translation(30323)+translation(30304)), 104, icondir+'search.png',
+                         callb_kwargs=dict(content_type='video'))
         if ADDON.getSetting("menu_video_live") == 'true':
-            AddMenuEntry((translation(30323)+translation(30305)), 'url', 101,
-                         icondir+'tv.png', '', '')
+            AddMenuEntry((translation(30323)+translation(30305)), 101,
+                         icondir+'tv.png')
         # if ADDON.getSetting("menu_video_red_button") == 'true':
         #     AddMenuEntry((translation(30323)+translation(30328)), 'url', 118,
         #                  icondir+'tv.png', '', '')
         if ADDON.getSetting("menu_video_uhd_trial") == 'true':
-            AddMenuEntry((translation(30323)+translation(30335)), 'url', 197,
-                         icondir+'tv.png', '', '')
+            AddMenuEntry((translation(30323)+translation(30335)), 197,
+                         icondir+'tv.png')
         if ADDON.getSetting("menu_video_watching") == 'true':
-            AddMenuEntry((translation(30323)+translation(30306)), 'url', 107,
-                         icondir+'favourites.png', '', '')
+            AddMenuEntry((translation(30323)+translation(30306)), 107,
+                         icondir+'favourites.png')
         if ADDON.getSetting("menu_video_added") == 'true':
             AddMenuEntry((translation(30323)+translation(30307)), 'url', 108,
-                         icondir+'favourites.png', '', '')
+                         icondir+'favourites.png')
         if ADDON.getSetting("menu_video_recommendations") == 'true':
-            AddMenuEntry(translation(30323)+translation(30336), 'url', 198,
-                         icondir+'top_rated.png', '', '')
+            AddMenuEntry(translation(30323)+translation(30336), 198,
+                         icondir+'top_rated.png')
 
         if ADDON.getSetting("menu_radio_live") == 'true':
-            AddMenuEntry((translation(30324)+translation(30321)), 'url', 113,
-                         icondir+'live.png', '', '')
+            AddMenuEntry((translation(30324)+translation(30321)), 113,
+                         icondir+'live.png')
         if ADDON.getSetting("menu_radio_az") == 'true':
-            AddMenuEntry((translation(30324)+translation(30302)), 'url', 112,
-                         icondir+'lists.png', '', '')
+            AddMenuEntry((translation(30324)+translation(30302)), 112,
+                         icondir+'lists.png')
         if ADDON.getSetting("menu_radio_categories") == 'true':
-            AddMenuEntry((translation(30324)+translation(30303)), 'url', 114,
-                         icondir+'lists.png', '', '')
+            AddMenuEntry((translation(30324)+translation(30303)), 114,
+                         icondir+'lists.png')
         if ADDON.getSetting("menu_radio_search") == 'true':
-            AddMenuEntry((translation(30324)+translation(30304)), 'audio', 104,
-                         icondir+'search.png', '', '')
+            AddMenuEntry((translation(30324)+translation(30304)), 104, icondir+'search.png',
+                         callb_kwargs=dict(content_type='audio'))
         if ADDON.getSetting("menu_radio_most_popular") == 'true':
-            AddMenuEntry((translation(30324)+translation(30301)), 'url', 116,
-                         icondir+'popular.png', '', '')
+            AddMenuEntry((translation(30324)+translation(30301)), 116,
+                         icondir+'popular.png')
         if ADDON.getSetting("menu_radio_added") == 'true':
-            AddMenuEntry((translation(30324)+translation(30307)), 'url', 117,
-                         icondir+'favourites.png', '', '')
+            AddMenuEntry((translation(30324)+translation(30307)), 117,
+                         icondir+'favourites.png')
         if ADDON.getSetting("menu_radio_following") == 'true':
-            AddMenuEntry((translation(30324)+translation(30334)), 'url', 199,
-                         icondir+'favourites.png', '', '')
-        AddMenuEntry(translation(30325), 'url', 119,
-                     icondir+'settings.png', '', '')
+            AddMenuEntry((translation(30324)+translation(30334)), 199,
+                         icondir+'favourites.png')
+        AddMenuEntry(translation(30325), 119, icondir+'settings.png')
 
 
 class ProgressDlg(xbmcgui.DialogProgressBG):
