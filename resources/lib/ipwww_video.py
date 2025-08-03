@@ -1308,9 +1308,13 @@ def ParseMediaselector(stream_id):
     subtitles = []
     # print("Parsing streams for PID: %s"%stream_id)
     # Open the page with the actual strem information and display the various available streams.
-    NEW_URL = 'https://open.live.bbc.co.uk/mediaselector/6/select/version/2.0/mediaset/pc/vpid/%s/format/json/cors/1' % stream_id 
+    fhd_enabled = ADDON.getSettingBool('live_fhd')
+    media_set = 'iptv-native-hd' if fhd_enabled else 'pc'
+    NEW_URL = ('https://open.live.bbc.co.uk/mediaselector/6/select/version/3.0/mediaset/%s/'
+               'cvid/urn:bbc:pips:pid:%s/format/json/cors/1/proto/https') % (media_set, stream_id)
     html = OpenURL(NEW_URL)
     json_data = json.loads(html)
+    video_height = 0
     if json_data:
         # print(json.dumps(json_data, sort_keys=True, indent=2))
         if 'media' in json_data:
@@ -1319,34 +1323,27 @@ def ParseMediaselector(stream_id):
                     if media['kind'] == 'captions':
                         if 'connection' in media:
                             for connection in media['connection']:
-                                href = ''
-                                protocol = ''
-                                supplier = ''
-                                if 'href' in connection:
-                                    href = connection['href']
-                                if 'protocol' in connection:
-                                    protocol = connection['protocol']
-                                if 'supplier' in connection:
-                                    supplier = connection['supplier']
-                                if protocol == 'https':
-                                    subtitles.append((href, protocol, supplier))
+                                protocol = connection.get('protocol', '')
+                                if protocol != 'https':
+                                    continue
+                                href = connection.get('href', '')
+                                supplier = connection.get('supplier', '')
+                                subtitles.append((href, protocol, supplier))
                     elif media['kind'].startswith('video'):
+                        height = int(media['height'])
+                        # Pick the set with the highest resolution
+                        if height < video_height:
+                            continue
+                        video_height = height
                         if 'connection' in media:
                             for connection in media['connection']:
-                                href = ''
-                                protocol = ''
-                                supplier = ''
-                                transfer_format = ''
-                                if 'href' in connection:
-                                    href = connection['href']
-                                if 'protocol' in connection:
-                                    protocol = connection['protocol']
-                                if 'supplier' in connection:
-                                    supplier = connection['supplier']
-                                if 'transferFormat' in connection:
-                                    transfer_format = connection['transferFormat']
-                                if protocol == 'https':
-                                    streams.append((href, protocol, supplier, transfer_format))
+                                protocol = connection.get('protocol', '')
+                                if protocol != 'https':
+                                    continue
+                                href = connection.get('href', '')
+                                supplier = connection.get('supplier', '')
+                                transfer_format = connection.get('transferFormat', '')
+                                streams.append((href, protocol, supplier, transfer_format))
         elif 'result' in json_data:
             # MediaSelector will probably already have returned HTTP status 403, but keep this check just to be sure.
             if json_data['result'] == 'geolocation':
