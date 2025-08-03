@@ -1219,22 +1219,38 @@ def PlayStream(name, url, iconimage, description='', subtitles_url='', episode_i
     liz = xbmcgui.ListItem(name)
     liz.setArt({'icon':'DefaultVideo.png', 'thumb':iconimage})
     liz.setInfo(type='Video', infoLabels={'Title': name})
+    liz.setContentLookup(False)
+    liz.setMimeType('application/dash+xml')
     liz.setProperty("IsPlayable", "true")
-    liz.setPath(url)
     liz.setProperty('inputstream', 'inputstream.adaptive')
     liz.setProperty('inputstream.adaptive.manifest_type', 'mpd')
-    if subtitles_url and ADDON.getSetting('subtitles') == 'true':
-        # print "Downloading subtitles"
-        subtitles_file = download_subtitles(subtitles_url)
-        liz.setSubtitles([subtitles_file])
-    if replay_chan_id:
-        resume_point = GetLiveStartPosition(replay_chan_id)
-        if resume_point is not None:
-            liz.setProperties({'ResumeTime': str(resume_point),
-                               'TotalTime': '7200',
-                               'inputstream.adaptive.play_timeshift_buffer': 'true'})
+    is_live = not bool(episode_id and stream_id)
+    if is_live:
+        from resources.lib.proxy import run_proxy
+        # live stream
+        proxy_address, proxy_server = run_proxy(url)
+        liz.setPath(proxy_address)
+        if replay_chan_id:
+            resume_point = GetLiveStartPosition(replay_chan_id)
+            if resume_point is not None:
+                liz.setProperties({'ResumeTime': str(resume_point),
+                                   'TotalTime': '7200',
+                                   'inputstream.adaptive.play_timeshift_buffer': 'true'})
+    else:
+        liz.setPath(url)
+        if subtitles_url and ADDON.getSetting('subtitles') == 'true':
+            # print "Downloading subtitles"
+            subtitles_file = download_subtitles(subtitles_url)
+            liz.setSubtitles([subtitles_url])
+
     xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, liz)
     ipwww_progress.monitor_progress(episode_id, stream_id)
+    if is_live:
+        # Keep the proxy running until the stream has stopped.
+        strm_monitor = ipwww_progress.FileProgress(None, None)
+        strm_monitor.wait_until_playing(15)
+        strm_monitor.monitor_progress()     # Blocks until the stream stops
+        proxy_server.stop_server(3)
 
 
 def GetLiveStartPosition(chan_id):
