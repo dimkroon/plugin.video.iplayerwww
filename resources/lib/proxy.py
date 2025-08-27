@@ -22,14 +22,13 @@ subs_adaptationset="""<AdaptationSet
   codecs="stpp.ttml.im1t"
   startWithSAP="1">
   <Role schemeIdUri="urn:mpeg:dash:role:2011" value="caption" />
-  <SegmentTemplate
-    timescale="1000"
-    initialization="http://127.0.0.1:%d/caption/segment.init"
-    media="t=3840/s=caption1/b=64000/$Number$.m4s">
-  </SegmentTemplate>
   <Representation
     id="English=64000"
     bandwidth="64000">
+    <SegmentTemplate
+        timescale="1000"
+        initialization="http://127.0.0.1:%d/caption/segment.init"
+        media="t=3840/s=caption1/b=64000/$Number$.m4s" />
   </Representation>
 </AdaptationSet>"""
 
