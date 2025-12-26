@@ -165,6 +165,7 @@ def ListLive():
         ('bbc_one_west',                     'BBC One West',             'bbc_one_london'),
         ('bbc_one_west_midlands',            'BBC One West Midlands',    'bbc_one_london'),
         ('bbc_one_yorks',                    'BBC One Yorks',            'bbc_one_london'),
+        ('red_button_one',                   'Red Button One',           '')
     ]
     from urllib.parse import urlencode
     enabled_chans = ADDON.getSetting('enabled_tv_channels').split(';')
@@ -1564,6 +1565,9 @@ def GetSchedules(channel_list):
     local_time_format = xbmc.getRegion('time').replace(':%S', '').replace('%I%I:', '%I:')
 
     def get_schedule(channel):
+        if not channel:
+            # channel has no schedule
+            return '', ''
         try:
             url = ''.join(('https://ibl.api.bbc.co.uk/ibl/v1/channels/',
                           channel,
