@@ -117,11 +117,11 @@ msgid "Catchup CDN source"
 msgstr ""
 
 msgctxt "#30211"
-msgid "Catchup bitrate"
+msgid "Enable 1080p live streams"
 msgstr ""
 
 msgctxt "#30212"
-msgid "Stream protocol"
+msgid "1080p may not work on all device all the time. Switch off to revert to 720p when you experience problems watching live streams"
 msgstr ""
 
 msgctxt "#30220"

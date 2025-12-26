@@ -1307,7 +1307,7 @@ def ParseMediaselector(stream_id):
     subtitles = []
     # print("Parsing streams for PID: %s"%stream_id)
     # Open the page with the actual strem information and display the various available streams.
-    fhd_enabled = True
+    fhd_enabled = ADDON.getSettingBool('live_fhd')
     media_set = 'iptv-native-hd' if fhd_enabled else 'pc'
     NEW_URL = ('https://open.live.bbc.co.uk/mediaselector/6/select/version/3.0/mediaset/%s/'
                'cvid/urn:bbc:pips:pid:%s/format/json/cors/1/proto/https') % (media_set, stream_id)

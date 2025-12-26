@@ -232,6 +232,11 @@
                                 </setting>
 			</group>
 			<group id="2" label="30101">
+                                <setting id="live_fhd" type="boolean" label="30211" help="30212">
+                                    <level>0</level>
+                                    <default>false</default>
+                                    <control type="toggle"/>
+                                </setting>
                                 <setting id="catchup_source" type="integer" label="30210" help="">
                                     <level>0</level>
                                     <default>0</default>
