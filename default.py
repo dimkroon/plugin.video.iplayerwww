@@ -188,7 +188,8 @@ try:
         Video.AddAvailableRedButtonDirectory(name, url)
 
     elif mode == 130:
-        Video.Search(url)
+        from resources.lib.ipwww_search import do_search
+        do_search(content_type='video', keyword=url)
 
     elif mode == 131:
         Radio.GetEpisodes(url)
@@ -215,7 +216,8 @@ try:
         Video.ScrapeEpisodes(url)
 
     elif mode == 140:
-        Radio.Search(url)
+        from resources.lib.ipwww_search import do_search
+        do_search(content_type='audio', keyword=url)
 
     elif mode == 190:
         from resources.lib.ipwww_search import new_search

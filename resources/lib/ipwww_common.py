@@ -493,7 +493,8 @@ def strptime(dt_str: str, format: str):
 
 
 def AddMenuEntry(name, url, mode, iconimage, description='', subtitles_url='', aired=None, resolution=None,
-                 resume_time='', total_time='', episode_id='', stream_id='', context_mnu=None, replay_chan_id=''):
+                 resume_time='', total_time='', episode_id='', stream_id='', context_mnu=None, replay_chan_id='',
+                 item_position=None):
     """Adds a new line to the Kodi list of playables.
     It is used in multiple ways in the plugin, which are distinguished by modes.
     """
@@ -581,6 +582,8 @@ def AddMenuEntry(name, url, mode, iconimage, description='', subtitles_url='', a
         listitem.setProperty("IsPlayable", str(not isFolder).lower())
     listitem.setProperty("IsFolder", str(isFolder).lower())
     listitem.setProperty("Property(Addon.Name)", "iPlayer WWW")
+    if item_position in ('top', 'bottom'):
+        listitem.setProperty('SpecialSort', item_position)
     xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),
                                 url=listitem_url, listitem=listitem, isFolder=isFolder)
     xbmcplugin.setContent(int(sys.argv[1]), 'episodes')
