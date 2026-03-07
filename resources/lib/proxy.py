@@ -14,16 +14,17 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 LOG_LVL = xbmc.LOGERROR
 
 subs_adaptationset="""<AdaptationSet
-  id="222"
-  group="222"
+  id="1"
+  group="3"
   contentType="text"
   lang="en"
   mimeType="application/mp4"
+  segmentAlignment="true" 
   codecs="stpp.ttml.im1t"
   startWithSAP="1">
   <Role schemeIdUri="urn:mpeg:dash:role:2011" value="caption" />
   <Representation
-    id="English=64000"
+    id="s=caption1"
     bandwidth="64000">
     <SegmentTemplate
         timescale="1000"
@@ -31,6 +32,8 @@ subs_adaptationset="""<AdaptationSet
         media="t=3840/s=caption1/b=64000/$Number$.m4s" />
   </Representation>
 </AdaptationSet>"""
+
+#
 
 
 def modify_manifest(mpd: bytes, base_url: str, server_port: int) -> bytes:
@@ -76,6 +79,8 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
                 self.send_response(404)
                 self.end_headers()
         except:
+            import traceback
+            xbmc.log(f"[iPlayer WWW.proxy] Error handling request '{self.path}:\n{traceback.format_exc()}")
             self.send_response(500)
             self.end_headers()
 
