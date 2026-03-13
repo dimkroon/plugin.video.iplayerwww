@@ -639,7 +639,7 @@ def CreateBaseDirectory(content_type=None):
             AddMenuEntry(translation(30303), 103, icondir+'lists.png')
         if ADDON.getSetting("menu_video_search") == 'true':
             AddMenuEntry(translation(30304), 104, icondir+'search.png',
-                         callb_kwargs=dict(content_type='video', mode=130))
+                         callb_kwargs=dict(content_type='video'))
         if ADDON.getSetting("menu_video_live") == 'true':
             AddMenuEntry(translation(30305), 101, icondir+'tv.png')
         # if ADDON.getSetting("menu_video_red_button") == 'true':
@@ -661,7 +661,7 @@ def CreateBaseDirectory(content_type=None):
         if ADDON.getSetting("menu_radio_categories") == 'true':
             AddMenuEntry(translation(30303), 114, icondir+'lists.png')
         if ADDON.getSetting("menu_radio_search") == 'true':
-            AddMenuEntry(translation(30304), 104, icondir+'search.png', callb_kwargs=dict(content_type='audio', mode=140))
+            AddMenuEntry(translation(30304), 104, icondir+'search.png', callb_kwargs=dict(content_type='audio'))
         if ADDON.getSetting("menu_radio_most_popular") == 'true':
             AddMenuEntry(translation(30301), 116, icondir+'popular.png')
         if ADDON.getSetting("menu_radio_added") == 'true':
@@ -693,7 +693,7 @@ def CreateBaseDirectory(content_type=None):
                          icondir+'lists.png')
         if ADDON.getSetting("menu_video_search") == 'true':
             AddMenuEntry((translation(30323)+translation(30304)), 104, icondir+'search.png',
-                         callb_kwargs=dict(content_type='video', mode=130))
+                         callb_kwargs=dict(content_type='video'))
         if ADDON.getSetting("menu_video_live") == 'true':
             AddMenuEntry((translation(30323)+translation(30305)), 101,
                          icondir+'tv.png')
@@ -724,7 +724,7 @@ def CreateBaseDirectory(content_type=None):
                          icondir+'lists.png')
         if ADDON.getSetting("menu_radio_search") == 'true':
             AddMenuEntry((translation(30324)+translation(30304)), 104, icondir+'search.png',
-                         callb_kwargs=dict(content_type='audio', mode=140))
+                         callb_kwargs=dict(content_type='audio'))
         if ADDON.getSetting("menu_radio_most_popular") == 'true':
             AddMenuEntry((translation(30324)+translation(30301)), 116,
                          icondir+'popular.png')

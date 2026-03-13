@@ -36,19 +36,17 @@ try:
 
     # Modes 101-119 will create a main directory menu entry
     elif mode == 101:
-        Video.ListLive(**params)
+        Video.ListLive()
 
     elif mode == 102:
-        Video.ListAtoZ(**params)
+        Video.ListAtoZ()
 
     elif mode == 103:
-        Video.ListCategories(**params)
+        Video.ListCategories()
 
     elif mode == 104:
         from resources.lib.ipwww_search import list_search_terms
-
-        mode = 130 if params.get('content_type') == 'video' else 140
-        list_search_terms(mode=mode, **params)
+        list_search_terms(**params)
 
     elif mode == 105:
         Video.ListMostPopular()
@@ -148,10 +146,6 @@ try:
     elif mode == 139:
         Video.ScrapeEpisodes(**params)
 
-    elif mode == 140:
-        from resources.lib.ipwww_search import do_search
-        do_search(**params)
-
     elif mode == 190:
         from resources.lib.ipwww_search import new_search
         new_search(**params)
@@ -212,7 +206,6 @@ try:
     elif mode == 305:
         from resources.lib.ipwww_search import edit_search_term
         edit_search_term(**params)
-
 
 except Exception as err:
     import traceback

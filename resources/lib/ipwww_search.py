@@ -127,7 +127,7 @@ def open_keyboard(content_type):
         return ''
 
 
-def list_search_terms(content_type: str, mode: int):
+def list_search_terms(content_type: str):
     """Create a listing of saved search terms, starting with an item that enables users
     to enter a new search term using the on-screen keyboard.
 
@@ -142,30 +142,29 @@ def list_search_terms(content_type: str, mode: int):
     txt_clear = translation(30605)
 
     AddMenuEntry('New Search', mode=190, iconimage=icon, item_position='top',
-                 callb_kwargs=dict(content_type=content_type, keyword='new_search'))
+                 callb_kwargs=dict(content_type=content_type))
     for keyword, date_info in search_history:
         ctx_mnu = [(txt_remove,
                     'RunPlugin(plugin://plugin.video.iplayerwww?'
-                    f'mode=304&content_type={content_type}&url=remove&keyword={keyword})'),
+                    f'mode=304&content_type={content_type}&action=remove&keyword={keyword})'),
                    (txt_edit,
                     'RunPlugin(plugin://plugin.video.iplayerwww?'
-                    f'mode=304&content_type={content_type}&url=edit&keyword={keyword})'),
+                    f'mode=304&content_type={content_type}&action=edit&keyword={keyword})'),
                    (txt_clear,
                     'RunPlugin(plugin://plugin.video.iplayerwww?'
-                    f'mode=304&content_type={content_type}&url=clear)')
+                    f'mode=304&content_type={content_type}&action=clear)')
                    ]
         date_created = datetime.fromtimestamp(date_info['created']).strftime('%Y-%m-%d')
-        AddMenuEntry(keyword, mode, icon, aired=date_created, context_mnu=ctx_mnu,
+        AddMenuEntry(keyword, 130, icon, aired=date_created, context_mnu=ctx_mnu,
                      callb_kwargs=dict(content_type=content_type, keyword=keyword))
     ipwww_video.SetSortMethods(xbmcplugin.SORT_METHOD_DATE)
 
 
-def new_search(content_type, mode):
+def new_search(content_type):
     keyword = open_keyboard(content_type)
     if keyword:
         SearchHistory(content_type).append(keyword)
-        params = {'mode': mode,
-                  'callb_kwargs': {'content_type': content_type, 'keyword': keyword}}
+        params = {'mode': 130, 'content_type': content_type, 'keyword': keyword}
         xbmc.executebuiltin(f'Container.Update(plugin://plugin.video.iplayerwww?{urlencode(params)})')
 
 
@@ -176,6 +175,8 @@ def do_search(content_type, keyword):
     elif content_type == 'audio':
         from resources.lib import ipwww_radio
         ipwww_radio.Search(keyword)
+    else:
+        print(f"**** Invalid content type '{content_type}'.")
 
 
 def context_menu(content_type: str, action: str, keyword: str = None):
