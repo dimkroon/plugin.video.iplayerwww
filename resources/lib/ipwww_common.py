@@ -510,8 +510,6 @@ def AddMenuEntry(name, mode, iconimage=None, description='', aired=None, resume_
     querstring = urlencode(callb_kwargs)
     listitem_url = ''.join((sys.argv[0], '?', querstring))
 
-    if mode in (101,203,113,213):
-        listitem_url = listitem_url + "&time=" + str(time.time())
     if aired:
         ymd = aired.split('-')
         date_string = ymd[2] + '/' + ymd[1] + '/' + ymd[0]
