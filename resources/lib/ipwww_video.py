@@ -96,10 +96,9 @@ def ListRedButton():
     ]
     iconimage = tp('special://home/addons/plugin.video.iplayerwww/media/red_button.png')
     for id, name in channel_list:
-        if ADDON.getSetting('streams_autoplay') == 'true':
-            AddMenuEntry(name, id, 203, iconimage, '', '')
-        else:
-            AddMenuEntry(name, id, 123, iconimage, '', '')
+        mode = 203 if ADDON.getSetting('streams_autoplay') == 'true' else 123
+        AddMenuEntry(name, mode, iconimage,
+                     callb_kwargs=dict(name=name, channelname=id, iconimage=iconimage))
 
 
 def ListUHDTrial():
@@ -112,7 +111,7 @@ def ListUHDTrial():
     ]
     iconimage = 'resource://resource.images.iplayerwww/media/red_button.png'
     for id, name in channel_list:
-        AddMenuEntry(name, id, 205, iconimage, '', '')
+        AddMenuEntry(name, 205, iconimage, callb_kwargs=dict(name=name, channelname=id))
 
 
 def AddAvailableUHDTrialItem(name, channelname):
@@ -126,7 +125,7 @@ def AddAvailableUHDTrialItem(name, channelname):
     
     url = "http://a.files.bbci.co.uk/media/live/manifesto/audio_video/webcast/dash/uk/full/%s/%s.mpd" % (provider,channelname)
 
-    PlayStream(name, url, "", "", "")
+    PlayStream(name, url)
 
 
 channel_list = [
@@ -184,16 +183,18 @@ def ListLive():
         else:
             mode = 123
             restart_action = "Container.Update"
-        querystring = urlencode({'name': name,
-                                 'url': id,
-                                 'mode': mode,
+
+        querystring = urlencode({'mode': mode,
+                                 'name': name,
+                                 'channelname': id,
                                  'iconimage': iconimage,
                                  'watch_from_start': 'True'})
         ctx_mnu = [(translation(30603),     # 'Watch from the start'
                     ''.join((restart_action, '(plugin://', addonid, '?', querystring,
                              ', noresume)' if mode == 203 else ')'))
                     )]
-        AddMenuEntry(title, id, mode, iconimage, schedule, '', resume_time='0', context_mnu=ctx_mnu)
+        AddMenuEntry(title, mode, iconimage, description=schedule, resume_time='0', context_mnu=ctx_mnu,
+                     callb_kwargs=dict(name=title, channelname=id, iconimage=iconimage))
     xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=False)
     sys.exit()
 
@@ -221,7 +222,7 @@ def ListAtoZ():
                 page += 1
     else:
         for name, url in characters:
-            AddMenuEntry(name, url, 124, '', '', '')
+            AddMenuEntry(name, 124, callb_kwargs=dict(url=url))
 
 def ListChannelAtoZ():
     """List programmes for each channel based on alphabetical order.
@@ -244,7 +245,7 @@ def ListChannelAtoZ():
     for id, img, name in channel_list:
         iconimage = 'resource://resource.images.iplayerwww/media/'+img+'.png'
         url = "https://www.bbc.co.uk/%s/a-z" % id
-        AddMenuEntry(name, url, 134, iconimage, '', '')
+        AddMenuEntry(name, 134, iconimage, callb_kwargs=dict(page_url=url))
 
 
 def GetAtoZPage(url):
@@ -438,7 +439,8 @@ def ScrapeEpisodes(page_url):
         if int(ADDON.getSetting('paginate_episodes')) == 0:
             if current_page < next_page:
                 page_url = 'https://www.bbc.co.uk' + page_base_url + str(next_page)
-                AddMenuEntry(" [COLOR ffffa500]%s >>[/COLOR]" % translation(30320), page_url, 128, '', '', '')
+                AddMenuEntry(" [COLOR ffffa500]%s >>[/COLOR]" % translation(30320), 128,
+                             callb_kwargs=dict(page_url=page_url))
 
 
 def ScrapeAtoZEpisodes(page_url):
@@ -502,7 +504,8 @@ def ScrapeAtoZEpisodes(page_url):
         if int(ADDON.getSetting('paginate_episodes')) == 0:
             if current_page < next_page:
                 page_url = page_base_url + str(next_page)
-                AddMenuEntry(" [COLOR ffffa500]%s >>[/COLOR]" % translation(30320), page_url, 134, '', '', '')
+                AddMenuEntry(" [COLOR ffffa500]%s >>[/COLOR]" % translation(30320), 134,
+                             callb_kwargs=dict(url=page_url))
 
 
 def ListCategories():
@@ -516,7 +519,7 @@ def ListCategories():
     for url, name in match:
         if ((name == "View all") or (name == "A-Z")):
             continue
-        AddMenuEntry(name, url, 126, '', '', '')
+        AddMenuEntry(name, 126, callb_kwargs=dict(url=url))
 
 
 def ListCategoryFilters(url):
@@ -534,9 +537,9 @@ def ListCategoryFilters(url):
         html,
         re.DOTALL)
     if match1:
-        AddMenuEntry('All', url, 126, '', '', '')
+        AddMenuEntry('All', url, 126, callb_kwargs=dict(url=url))
         for url, name in match1:
-            AddMenuEntry(name, url, 126, '', '', '')
+            AddMenuEntry(name, url, 126, callb_kwargs=dict(url=url))
     else:
         GetFilteredCategory(url)
 
@@ -565,7 +568,7 @@ def ListChannelHighlights():
     ]
     for id, img, name in channel_list:
         iconimage = 'resource://resource.images.iplayerwww/media/'+img+'.png'
-        AddMenuEntry(name, id, 106, iconimage, '', '')
+        AddMenuEntry(name, 106, iconimage, callb_kwargs=dict(highlights_url=id))
 
 
 def ParseSingleJSON(meta, item, name, added_playables, added_directories):
@@ -695,15 +698,16 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
     if num_episodes:
         if not main_url in added_directories:
             title = '[B]'+item['title']+'[/B] - '+num_episodes+' episodes available'
-            AddMenuEntry(title, main_url, 139, icon, synopsis, '')
+            AddMenuEntry(title, 139, icon, synopsis,
+                         callb_kwargs=dict(page_url=main_url))
             added_directories.append(main_url)
 
     elif episodes_url:
         if not episodes_url in added_directories:
             if episodes_title=='':
                 episodes_title = title
-            AddMenuEntry('[B]%s[/B]' % (episodes_title),
-                         episodes_url, 128, icon, synopsis, '')
+            AddMenuEntry('[B]%s[/B]' % (episodes_title), 128, icon, synopsis,
+                         callb_kwargs=dict(page_url=episodes_url))
             added_directories.append(main_url)
     elif main_url:
         if not main_url in added_playables:
@@ -740,8 +744,8 @@ def ParseJSON(programme_data, current_url):
                                 continue
                             base_url = url_split[0]
                             series_url = base_url + '?seriesId=' + series['id']
-                            AddMenuEntry('[B]%s: %s[/B]' % (name, series['title']),
-                                         series_url, 128, '', '', '')
+                            AddMenuEntry('[B]%s: %s[/B]' % (name, series['title']), 128,
+                                         callb_kwargs=dict(page_url=series_url))
 
         programmes = None
         if 'currentLetter' in programme_data:
@@ -768,8 +772,8 @@ def ParseJSON(programme_data, current_url):
                             continue
                         base_url = url_split[0]
                         series_url = base_url + '?seriesId=' + series['id']
-                        AddMenuEntry('[B]%s: %s[/B]' % (name, series['title']['default']),
-                                     series_url, 128, '', '', '')
+                        AddMenuEntry('[B]%s: %s[/B]' % (name, series['title']['default']), 128,
+                                     callb_kwargs=dict(page_url=series_url))
         elif 'items' in programme_data:
             # This must be Watchlist or Continue Watching.
             programmes = programme_data['items']
@@ -804,8 +808,8 @@ def ParseJSON(programme_data, current_url):
                 if (title and id):
                     episodes_url = 'https://www.bbc.co.uk/iplayer/group/%s' % id
                     if not episodes_url in added_directories:
-                        AddMenuEntry('[B]%s: %s[/B]' % (translation(30314), title),
-                                     episodes_url, 128, '', '', '')
+                        AddMenuEntry('[B]%s: %s[/B]' % (translation(30314), title), 128,
+                                     callb_kwargs=dict(page_url=episodes_url))
 
         if 'highlights' in programme_data:
             highlights = programme_data.get('highlights')
@@ -837,15 +841,15 @@ def ParseJSON(programme_data, current_url):
                         if (id and (type == 'group')):
                             if (id == 'popular'):
                                 AddMenuEntry('[B]%s: %s[/B]' % (translation(30314), title),
-                                             'url', 105, '', '', '')
+                                             'url', 105)
                             else:
                                 episodes_url = 'https://www.bbc.co.uk/iplayer/group/%s' % id
                                 if not episodes_url in added_directories:
-                                    AddMenuEntry('[B]%s: %s[/B]' % (translation(30314), title),
-                                                 episodes_url, 128, '', '', '')
+                                    AddMenuEntry('[B]%s: %s[/B]' % (translation(30314), title), 128,
+                                                 callb_kwargs=dict(page_url=episodes_url))
                         if (id and (type == 'category')):
-                            AddMenuEntry('[B]%s: %s[/B]' % (translation(30314), title),
-                                         id, 126, '', '', '')
+                            AddMenuEntry('[B]%s: %s[/B]' % (translation(30314), title), 126,
+                                         callb_kwargs=dict(url=id))
 
     xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
     xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_DATE)
@@ -966,15 +970,11 @@ def ListMostPopular():
         ParseJSON(json_data, current_url)
 
 
-def AddAvailableStreamItem(name, url, iconimage, description):
+def AddAvailableStreamItem(name, url):
     """Play a streamm based on settings for preferred catchup source and bitrate."""
     stream_ids = ScrapeAvailableStreams(url)
     if stream_ids['name']:
         name = stream_ids['name']
-    if not iconimage or iconimage == u"DefaultVideo.png" and stream_ids['image']:
-        iconimage = stream_ids['image']
-    if stream_ids['description']:
-        description = stream_ids['description']
     if ((not stream_ids['stream_id_st']) or (ADDON.getSetting('search_ad') == 'true')) and stream_ids['stream_id_ad']:
         streams_all = ParseStreamsHLSDASH(stream_ids['stream_id_ad'])
         strm_id = stream_ids['stream_id_ad']
@@ -998,7 +998,7 @@ def AddAvailableStreamItem(name, url, iconimage, description):
         match = [x for x in streams if (x[0] == source)]
     else:
         match = streams
-    PlayStream(name, match[0][2], iconimage, description, subtitles_url,
+    PlayStream(name, match[0][2], subtitles_url,
                episode_id=stream_ids['episode_id'], stream_id=strm_id)
 
 
@@ -1036,10 +1036,10 @@ def Search(search_entered):
 
 
 def AddAvailableLiveStreamItemSelector(name, channelname, iconimage, watch_from_start=False):
-    return AddAvailableLiveDASHStreamItem(name, channelname, iconimage, watch_from_start)
+    return AddAvailableLiveDASHStreamItem(name, channelname, watch_from_start)
 
 
-def AddAvailableLiveDASHStreamItem(name, channelname, iconimage, watch_from_start=False):
+def AddAvailableLiveDASHStreamItem(name, channelname, watch_from_start=False):
     streams = ParseLiveDASHStreams(channelname)
 
     source = int(ADDON.getSetting('live_source'))
@@ -1050,9 +1050,9 @@ def AddAvailableLiveDASHStreamItem(name, channelname, iconimage, watch_from_star
     else:
         match = streams
     if watch_from_start:
-        PlayStream(name, match[0][2], iconimage, '', '', replay_chan_id=channelname)
+        PlayStream(name, match[0][2], '', '', replay_chan_id=channelname)
     else:
-        PlayStream(name, match[0][2], iconimage, '', '')
+        PlayStream(name, match[0][2], '', '')
 
 
 def AddAvailableLiveStreamsDirectory(name, channelname, iconimage, watch_from_start=False):
@@ -1069,9 +1069,11 @@ def AddAvailableLiveStreamsDirectory(name, channelname, iconimage, watch_from_st
     for supplier, bitrate, url, resolution in streams:
         title = name + ' - [I][COLOR fff1f1f1]%s[/COLOR][/I]' % (suppliers[supplier])
         if watch_from_start:
-            AddMenuEntry(title, url, 201, iconimage, resume_time='0', replay_chan_id=channelname)
+            replay_chan_id = channelname
         else:
-            AddMenuEntry(title, url, 201, iconimage, resume_time='0')
+            replay_chan_id = ''
+        AddMenuEntry(title, 201, iconimage,
+                     callb_kwargs=dict(name=title, url=url, replay_chan_id=replay_chan_id))
 
 
 def GetJsonDataWithBBCid(url, retry=True):
@@ -1126,12 +1128,12 @@ def ListWatching():
             # A programme with multiple episodes; add a 'View all episodes' context menu item.
             all_episodes_link = 'https://www.bbc.co.uk/iplayer/episodes/' + programme['id']
             ct_menus.append((translation(30600),
-                             f'Container.Update(plugin://plugin.video.iplayerwww/?mode=128&url={all_episodes_link})'))
+                             f'Container.Update(plugin://plugin.video.iplayerwww/?mode=128&page_url={all_episodes_link})'))
 
         if programme_id:
             # Add a context menu item 'Remove'
             ct_menus.append((translation(30601),
-                             f'RunPlugin(plugin://plugin.video.iplayerwww?mode=301&episode_id={programme_id}&url=url)'))
+                             f'RunPlugin(plugin://plugin.video.iplayerwww?mode=301&episode_id={programme_id}'))
 
         CheckAutoplay(**item_data)
 
@@ -1154,12 +1156,15 @@ def ListFavourites():
 
     for added_item in data['items']['elements']:
         programme = added_item['programme']
+
         ct_mnu = [('Remove',
-                   f'RunPlugin(plugin://plugin.video.iplayerwww?mode=302&episode_id={programme["id"]}&url=url)')]
+                   f'RunPlugin(plugin://plugin.video.iplayerwww?mode=302&programme_id={programme["id"]}')]
         if programme['count'] == 1:
             CheckAutoplay(context_mnu=ct_mnu, **ParseProgramme(programme, playable=True))
         else:
-            AddMenuEntry(mode=128, subtitles_url='', context_mnu=ct_mnu, **ParseProgramme(programme))
+            pgm_data = ParseProgramme(programme)
+            url = pgm_data.pop('url')
+            AddMenuEntry(mode=128, context_mnu=ct_mnu, **pgm_data, callb_kwargs=dict(page_url=url))
     SetSortMethods()
 
 
@@ -1192,7 +1197,7 @@ def ListRecommendations(item_id=None):
                         all_episodes_link = 'https://www.bbc.co.uk/iplayer/episodes/' + tleo_id
                         item_data['context_mnu'] = [
                             (translation(30600),        # View all episodes
-                             f'Container.Update(plugin://plugin.video.iplayerwww/?mode=128&url={all_episodes_link})')]
+                             f'Container.Update(plugin://plugin.video.iplayerwww/?mode=128&page_url={all_episodes_link})')]
                     CheckAutoplay(**item_data)
                 SetSortMethods(xbmcplugin.SORT_METHOD_DATE)
                 return
@@ -1201,21 +1206,17 @@ def ListRecommendations(item_id=None):
         for bundle in data['bundles']:
             bundle_id = bundle.get('id', '')
             if bundle_id in ('recommendations', 'if-you-liked'):
-                AddMenuEntry(bundle['title']['default'], bundle_id, 198,
-                             SelectImage(bundle.get('image')), SelectSynopsis(bundle.get('synopses')))
+                AddMenuEntry(bundle['title']['default'], 198, SelectImage(bundle.get('image')),
+                             SelectSynopsis(bundle.get('synopses')), callb_kwargs=dict(item_id=bundle_id))
 
 
 
-def PlayStream(name, url, iconimage, description='', subtitles_url='', episode_id=None, stream_id=None, replay_chan_id=''):
-    if iconimage == '':
-        iconimage = 'DefaultVideo.png'
-
+def PlayStream(name, url, subtitles_url='', episode_id=None, stream_id=None, replay_chan_id=''):
     # Check geo-block. It's quite impossible now to get here without having run into a geo-block
     # earlier, but left in just in case someone find a way.
     OpenURL(url)
 
     liz = xbmcgui.ListItem(name)
-    liz.setArt({'icon':'DefaultVideo.png', 'thumb':iconimage})
     liz.setInfo(type='Video', infoLabels={'Title': name})
     liz.setProperty("IsPlayable", "true")
     liz.setPath(url)
@@ -1299,8 +1300,9 @@ def AddAvailableStreamsDirectory(name, stream_id, iconimage, description, episod
     suppliers = ['', 'Akamai', 'Limelight', 'Bidi','Cloudfront']
     for supplier, bitrate, url, resolution, protocol in streams[0]:
         title = name + ' - [I][COLOR ffd3d3d3]%s[/COLOR][/I]' % (suppliers[supplier])
-        AddMenuEntry(title, url, 201, iconimage, description, subtitles_url, resolution=resolution,
-                     episode_id=episode_id, stream_id=stream_id, resume_time=resume_time, total_time=total_time)
+        AddMenuEntry(title, 201, iconimage, description, resume_time=resume_time, total_time=total_time,
+                     callb_kwargs=dict(name=title, url=url, subtitles_url=subtitles_url,
+                                       episode_id=episode_id, stream_id=stream_id))
 
 
 def ParseMediaselector(stream_id):
@@ -1513,11 +1515,13 @@ def ScrapeJSON(html):
 
 def CheckAutoplay(name, url, iconimage, description, aired=None, resume_time="", total_time="", context_mnu=None):
     if ADDON.getSetting('streams_autoplay') == 'true':
-        mode = 202
+        AddMenuEntry(name, 202, iconimage, description, aired=aired, context_mnu=context_mnu,
+                     resume_time=resume_time, total_time=total_time,
+                     callb_kwargs=dict(name=name, url=url))
     else:
-        mode = 122
-    AddMenuEntry(name, url, mode, iconimage, description, '', aired=aired,
-                 resume_time=resume_time, total_time=total_time, context_mnu=context_mnu)
+        AddMenuEntry(name, 122, iconimage, description, aired=aired, context_mnu=context_mnu,
+                     callb_kwargs=dict(name=name, url=url, iconimage=iconimage, description=description,
+                                       resume_time=resume_time, total_time=total_time))
 
 
 def GetSchedules(channel_list):
