@@ -620,18 +620,12 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
         elif 'id' in item:
             if 'initial_children' in item:
                 for ic in item['initial_children']:
-                    if 'id' in ic:
-                        if item['id'] == ic['id']:
-                            # This is just a playable, do not create a directory.
-                            # Use the initial children to create the entry as it normally contains more information.
-                            ParseSingleJSON(meta, ic, name, added_playables, added_directories)
-                        else:
-                            # There is a directory, and an initial episode.
-                            # We need to create one directory and one playable.
-                            ParseSingleJSON(meta, ic, name, added_playables, added_directories)
-                            episodes_url = 'https://www.bbc.co.uk/iplayer/episodes/' + item.get('id')
+                    if item.get('id') == ic['id']:
+                        # This is just a playable, do not create a directory.
+                        # Use the initial children to create the entry as it normally contains more information.
+                        ParseSingleJSON(meta, ic, name, added_playables, added_directories)
                     else:
-                        # Never seen this, but seems possible. This is just a directory.
+                        # Create a directory
                         episodes_url = 'https://www.bbc.co.uk/iplayer/episodes/' + item.get('id')
             else:
                 main_url = 'https://www.bbc.co.uk/iplayer/episode/' + item.get('id')
@@ -694,7 +688,6 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
         elif 'sources' in item:
             temp = item['sources'][0]['srcset'].split()[0]
             icon = re.sub(r'ic/.+?/','ic/832x468/',temp)
-
 
     if num_episodes:
         if not main_url in added_directories:
