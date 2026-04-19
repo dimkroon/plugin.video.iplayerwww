@@ -970,11 +970,9 @@ def ListMostPopular():
         ParseJSON(json_data, current_url)
 
 
-def AddAvailableStreamItem(name, url):
+def AddAvailableStreamItem(url):
     """Play a streamm based on settings for preferred catchup source and bitrate."""
     stream_ids = ScrapeAvailableStreams(url)
-    if stream_ids['name']:
-        name = stream_ids['name']
     if ((not stream_ids['stream_id_st']) or (ADDON.getSetting('search_ad') == 'true')) and stream_ids['stream_id_ad']:
         streams_all = ParseStreamsHLSDASH(stream_ids['stream_id_ad'])
         strm_id = stream_ids['stream_id_ad']
@@ -998,7 +996,7 @@ def AddAvailableStreamItem(name, url):
         match = [x for x in streams if (x[0] == source)]
     else:
         match = streams
-    PlayStream(name, match[0][2], subtitles_url,
+    PlayStream(match[0][2], subtitles_url,
                episode_id=stream_ids['episode_id'], stream_id=strm_id)
 
 
@@ -1211,13 +1209,12 @@ def ListRecommendations(item_id=None):
 
 
 
-def PlayStream(name, url, subtitles_url='', episode_id=None, stream_id=None, replay_chan_id=''):
+def PlayStream(url, subtitles_url='', episode_id=None, stream_id=None, replay_chan_id=''):
     # Check geo-block. It's quite impossible now to get here without having run into a geo-block
     # earlier, but left in just in case someone find a way.
     OpenURL(url)
 
-    liz = xbmcgui.ListItem(name)
-    liz.setInfo(type='Video', infoLabels={'Title': name})
+    liz = xbmcgui.ListItem()
     liz.setProperty("IsPlayable", "true")
     liz.setPath(url)
     liz.setProperty('inputstream', 'inputstream.adaptive')
@@ -1301,7 +1298,7 @@ def AddAvailableStreamsDirectory(name, stream_id, iconimage, description, episod
     for supplier, bitrate, url, resolution, protocol in streams[0]:
         title = name + ' - [I][COLOR ffd3d3d3]%s[/COLOR][/I]' % (suppliers[supplier])
         AddMenuEntry(title, 201, iconimage, description, resume_time=resume_time, total_time=total_time,
-                     callb_kwargs=dict(name=title, url=url, subtitles_url=subtitles_url,
+                     callb_kwargs=dict(url=url, subtitles_url=subtitles_url,
                                        episode_id=episode_id, stream_id=stream_id))
 
 
@@ -1517,7 +1514,7 @@ def CheckAutoplay(name, url, iconimage, description, aired=None, resume_time="",
     if ADDON.getSetting('streams_autoplay') == 'true':
         AddMenuEntry(name, 202, iconimage, description, aired=aired, context_mnu=context_mnu,
                      resume_time=resume_time, total_time=total_time,
-                     callb_kwargs=dict(name=name, url=url))
+                     callb_kwargs=dict(url=url))
     else:
         AddMenuEntry(name, 122, iconimage, description, aired=aired, context_mnu=context_mnu,
                      callb_kwargs=dict(name=name, url=url, iconimage=iconimage, description=description,
