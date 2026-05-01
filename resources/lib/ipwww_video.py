@@ -1034,10 +1034,10 @@ def Search(search_entered):
 
 
 def AddAvailableLiveStreamItemSelector(name, channelname, iconimage, watch_from_start=False):
-    return AddAvailableLiveDASHStreamItem(name, channelname, watch_from_start)
+    return AddAvailableLiveDASHStreamItem(channelname, watch_from_start)
 
 
-def AddAvailableLiveDASHStreamItem(name, channelname, watch_from_start=False):
+def AddAvailableLiveDASHStreamItem(channelname, watch_from_start=False):
     streams = ParseLiveDASHStreams(channelname)
 
     source = int(ADDON.getSetting('live_source'))
@@ -1048,9 +1048,9 @@ def AddAvailableLiveDASHStreamItem(name, channelname, watch_from_start=False):
     else:
         match = streams
     if watch_from_start:
-        PlayStream(name, match[0][2], '', '', replay_chan_id=channelname)
+        PlayStream(match[0][2], '', '', replay_chan_id=channelname)
     else:
-        PlayStream(name, match[0][2], '', '')
+        PlayStream(match[0][2], '', '')
 
 
 def AddAvailableLiveStreamsDirectory(name, channelname, iconimage, watch_from_start=False):
@@ -1071,7 +1071,7 @@ def AddAvailableLiveStreamsDirectory(name, channelname, iconimage, watch_from_st
         else:
             replay_chan_id = ''
         AddMenuEntry(title, 201, iconimage,
-                     callb_kwargs=dict(name=title, url=url, replay_chan_id=replay_chan_id))
+                     callb_kwargs=dict(url=url, replay_chan_id=replay_chan_id))
 
 
 def GetJsonDataWithBBCid(url, retry=True):
