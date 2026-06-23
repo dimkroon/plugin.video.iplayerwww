@@ -125,7 +125,7 @@ def AddAvailableUHDTrialItem(name, channelname):
     
     url = "http://a.files.bbci.co.uk/media/live/manifesto/audio_video/webcast/dash/uk/full/%s/%s.mpd" % (provider,channelname)
 
-    PlayStream(name, url)
+    PlayStream(url)
 
 
 channel_list = [
