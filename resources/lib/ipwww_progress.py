@@ -124,6 +124,8 @@ class FileProgress(xbmc.Player):
                 self.post_event('heartbeat')
 
     def post_event(self, action):
+        if not self._episode_id and self._stream_id:
+            return
         data = {
             "action": action,
             "id": self._episode_id,
@@ -169,11 +171,10 @@ class FileProgress(xbmc.Player):
 
 def monitor_progress(episode_id, stream_id):
     try:
-        if episode_id and stream_id:
-            play_monitor = FileProgress(episode_id, stream_id)
+        play_monitor = FileProgress(episode_id, stream_id)
 
-            if play_monitor.wait_until_playing(15) is False:
-                return
-            play_monitor.monitor_progress()
+        if play_monitor.wait_until_playing(15) is False:
+            return
+        play_monitor.monitor_progress()
     except Exception as e:
         xbmc.log(f"[iPlayer WWW.monitor_progress] Play progress monitoring aborted due to unhandled exception: {repr(e)}")

@@ -1215,25 +1215,37 @@ def PlayStream(url, subtitles_url='', episode_id=None, stream_id=None, replay_ch
     OpenURL(url)
 
     liz = xbmcgui.ListItem()
+    liz.setContentLookup(False)
+    liz.setMimeType('application/dash+xml')
     liz.setProperty("IsPlayable", "true")
-    liz.setPath(url)
     liz.setProperty('inputstream', 'inputstream.adaptive')
     liz.setProperty('inputstream.adaptive.manifest_type', 'mpd')
-    if subtitles_url and ADDON.getSetting('subtitles') == 'true':
-        # print "Downloading subtitles"
-        subtitles_file = download_subtitles(subtitles_url)
-        liz.setSubtitles([subtitles_file])
-        liz.setProperties({'subtitles.translate.type': '.srt',
-                           'subtitles.translate.orig_lang': 'en',
-                           'subtitles.translate.file': subtitles_file})
-    if replay_chan_id:
-        resume_point = GetLiveStartPosition(replay_chan_id)
-        if resume_point is not None:
-            liz.setProperties({'ResumeTime': str(resume_point),
-                               'TotalTime': '7200',
-                               'inputstream.adaptive.play_timeshift_buffer': 'true'})
+    # FIXME: find a more reliable way to distinguish live from VOD
+    is_live = '-cmaf' in url
+    if is_live:
+        from resources.lib.proxy import run_proxy
+        # live stream
+        proxy_address, proxy_server = run_proxy(url)
+        liz.setPath(proxy_address)
+        if replay_chan_id:
+            resume_point = GetLiveStartPosition(replay_chan_id)
+            if resume_point is not None:
+                liz.setProperties({'ResumeTime': str(resume_point),
+                                   'TotalTime': '7200',
+                                   'inputstream.adaptive.play_timeshift_buffer': 'true'})
+    else:
+        liz.setPath(url)
+        if subtitles_url and ADDON.getSetting('subtitles') == 'true':
+            # print "Downloading subtitles"
+            subtitles_file = download_subtitles(subtitles_url)
+            liz.setSubtitles([subtitles_file])
+            liz.setProperties({'subtitles.translate.type': '.srt',
+                               'subtitles.translate.orig_lang': 'en',
+                               'subtitles.translate.file': subtitles_file})
     xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, liz)
-    ipwww_progress.monitor_progress(episode_id, stream_id)
+    ipwww_progress.monitor_progress(episode_id, stream_id)  # Blocks until the stream stops
+    if is_live:
+        proxy_server.stop_server(3)
 
 
 def GetLiveStartPosition(chan_id):
