@@ -103,11 +103,11 @@ def ListRedButton():
 
 def ListUHDTrial():
     channel_list = [
-        ('uhd_stream_01',  'UHD Trial 1'),
-        ('uhd_stream_02',  'UHD Trial 2'),
-        ('uhd_stream_03',  'UHD Trial 3'),
-        ('uhd_stream_04',  'UHD Trial 4'),
-        ('uhd_stream_05',  'UHD Trial 5'),
+        ('uk_bbc_stream_041',  'UHD Trial 1'),
+        ('uk_bbc_stream_042',  'UHD Trial 2'),
+        ('uk_bbc_stream_043',  'UHD Trial 3'),
+        ('uk_bbc_stream_044',  'UHD Trial 4'),
+        ('uk_bbc_stream_045',  'UHD Trial 5'),
     ]
     iconimage = 'resource://resource.images.iplayerwww/media/red_button.png'
     for id, name in channel_list:
@@ -115,15 +115,16 @@ def ListUHDTrial():
 
 
 def AddAvailableUHDTrialItem(name, channelname):
-    source = int(ADDON.getSetting('live_source'))
-    if (source == 1):
-        provider = "ak"
-    elif (source == 2):
-        provider = "llnw"
-    else:
-        provider = "ak"
-    
-    url = "http://a.files.bbci.co.uk/media/live/manifesto/audio_video/webcast/dash/uk/full/%s/%s.mpd" % (provider,channelname)
+    # source = int(ADDON.getSetting('live_source'))
+    # if (source == 1):
+    #     provider = "ak"
+    # elif (source == 2):
+    #     provider = "llnw"
+    # else:
+    #     provider = "ak"
+
+    url = f'https://ve-uhd-push-uk.live.fastly.md.bbci.co.uk/x=4/i=urn:bbc:pips:service:{channelname}/iptv_uhd_v1.mpd'
+    # url = "http://a.files.bbci.co.uk/media/live/manifesto/audio_video/webcast/dash/uk/full/%s/%s.mpd" % (provider,channelname)
 
     PlayStream(url)
 
@@ -1221,7 +1222,7 @@ def PlayStream(url, subtitles_url='', episode_id=None, stream_id=None, replay_ch
     liz.setProperty('inputstream', 'inputstream.adaptive')
     liz.setProperty('inputstream.adaptive.manifest_type', 'mpd')
     # FIXME: find a more reliable way to distinguish live from VOD
-    is_live = '-cmaf' in url
+    is_live = '-cmaf' in url or '-uhd' in url
     if is_live:
         from resources.lib.proxy import run_proxy
         # live stream
