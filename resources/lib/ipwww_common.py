@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
 import sys
 import os
 import re
@@ -473,6 +474,13 @@ def iso_duration_2_seconds(iso_str: str) -> int:
     except (ValueError, AttributeError, TypeError):
         pass
     return None
+
+
+def seconds_2_iso_duration(secs: int | float):
+    hrs, secs = divmod(secs, 3600)
+    mins, secs = divmod(secs, 60)
+    iso_duration = f'PT{int(hrs)}H{int(mins)}M{secs:.4g}S'
+    return iso_duration
 
 
 def strptime(dt_str: str, format: str):
