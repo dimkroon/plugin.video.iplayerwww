@@ -26,7 +26,9 @@ def modify_manifest(mpd: bytes, base_url: str) -> bytes:
 
     # Adjust timeshift buffer to prevent it having a starting point earlier than the stream's start time.
     try:
-        start_t = datetime.fromisoformat(root.attrib['availabilityStartTime'].replace('Z', '+00:00'))
+        # Note: The number of decimal in the seconds can vary, causing errors when parsed with fromisoformat()
+        start_t = (datetime.strptime(root.attrib['availabilityStartTime'][:19], '%Y-%m-%dT%H:%M:%S'))
+        start_t = start_t.replace(tzinfo=timezone.utc)
     except KeyError:
         # Not a live stream
         return mpd
