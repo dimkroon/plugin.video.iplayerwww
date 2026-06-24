@@ -9,7 +9,8 @@ import xbmc
 
 from resources.lib.ipwww_common import(
     iso_duration_2_seconds, 
-    seconds_2_iso_duration)
+    seconds_2_iso_duration,
+    strptime)
 
 
 def modify_manifest(mpd: bytes, base_url: str) -> bytes:
@@ -27,7 +28,7 @@ def modify_manifest(mpd: bytes, base_url: str) -> bytes:
     # Adjust timeshift buffer to prevent it having a starting point earlier than the stream's start time.
     try:
         # Note: The number of decimal in the seconds can vary, causing errors when parsed with fromisoformat()
-        start_t = (datetime.strptime(root.attrib['availabilityStartTime'][:19], '%Y-%m-%dT%H:%M:%S'))
+        start_t = (strptime(root.attrib['availabilityStartTime'][:19], '%Y-%m-%dT%H:%M:%S'))
         start_t = start_t.replace(tzinfo=timezone.utc)
     except KeyError:
         # Not a live stream
