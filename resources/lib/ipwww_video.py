@@ -1132,7 +1132,7 @@ def ListWatching():
         if programme_id:
             # Add a context menu item 'Remove'
             ct_menus.append((translation(30601),
-                             f'RunPlugin(plugin://plugin.video.iplayerwww?mode=301&episode_id={programme_id}'))
+                             f'RunPlugin(plugin://plugin.video.iplayerwww?mode=301&episode_id={programme_id})'))
 
         CheckAutoplay(**item_data)
 
@@ -1156,8 +1156,8 @@ def ListFavourites():
     for added_item in data['items']['elements']:
         programme = added_item['programme']
 
-        ct_mnu = [('Remove',
-                   f'RunPlugin(plugin://plugin.video.iplayerwww?mode=302&programme_id={programme["id"]}')]
+        ct_mnu = [(translation(30601),
+                   f'RunPlugin(plugin://plugin.video.iplayerwww?mode=302&programme_id={programme["id"]})')]
         if programme['count'] == 1:
             CheckAutoplay(context_mnu=ct_mnu, **ParseProgramme(programme, playable=True))
         else:
