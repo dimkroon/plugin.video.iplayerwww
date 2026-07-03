@@ -24,12 +24,19 @@ or the support thread on the Kodi forum.
 
 If you're not quite sure where they originate from, it's best to re-install 
 iplayerwww from the official Kodi repository. If the problem persists, 
-report at iplayerwww's repo or [forum support thread](https://forum.kodi.tv/showthread.php?tid=353349), 
-if not report it here. 
+report at [iplayerwww's repo](https://github.com/vonH/plugin.video.iplayerwww)
+or [forum support thread](https://forum.kodi.tv/showthread.php?tid=353349), 
+if not, report it here. 
 
 Please include an accurate description of the problem. Describe 
 exactly what steps to make to reproduce the problem (every click from the 
 home menu). And  always attach a link to the 
 [debug log file](https://kodi.wiki/view/Log_file).
+
+
+### Questions and remarks
+The same applies to questions or things you'd just like to discuss: If it 
+concerns new features/fixes, please use the discussions section in this repo 
+and open a new discussion, or join an existing one. 
 
 
