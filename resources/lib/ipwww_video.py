@@ -1034,7 +1034,8 @@ def Search(search_entered):
     ScrapeEpisodes(NEW_URL)
 
 
-def AddAvailableLiveStreamItemSelector(name, channelname, iconimage, watch_from_start=False):
+def AddAvailableLiveStreamItemSelector(name, channelname, iconimage=None, watch_from_start=False):
+    # keeping argument name and iconimage in to be compatible with AddAvailableLiveStreamsDirectory()
     return AddAvailableLiveDASHStreamItem(channelname, watch_from_start)
 
 
