@@ -81,7 +81,7 @@ def enabled_channels(enabled_ids, all_channels):
         iconimage = f'resource://resource.images.iplayerwww/media/{chan_id}.png'
         url = ''.join((
             'plugin://', addonid,
-            '?url=', utf8_quote_plus(chan_id),
+            '?channelname=', utf8_quote_plus(chan_id),
             '&mode=', mode,
             '&name=', utf8_quote_plus(chan_name),
             '&iconimage', utf8_quote_plus(iconimage)
