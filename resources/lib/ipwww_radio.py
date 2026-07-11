@@ -126,7 +126,7 @@ def GetAtoZPage(page_url, just_episodes=False):
                     title = "[B]%s[/B] - %s" % (station, name)
 
                 if series_id:
-                    AddMenuEntry(series_title, series_id, 131, image, synopsis, '')
+                    AddMenuEntry(series_title, 131, image, synopsis, callb_kwargs={'url': series_id})
                 elif programme_id: #TODO maybe they are not always mutually exclusive
                     url = "https://www.bbc.co.uk/sounds/play/%s" % programme_id
                     CheckAutoplay(title, url, image, ' ', '')
@@ -143,7 +143,8 @@ def GetAtoZPage(page_url, just_episodes=False):
         if int(ADDON.getSetting('radio_paginate_episodes')) == 0:
             if current_page < next_page:
                 page_url = 'http://www.bbc.co.uk' + page_base_url + str(next_page)
-                AddMenuEntry(" [COLOR ffffa500]%s >>[/COLOR]" % translation(30320), page_url, 138, '', '', '')
+                AddMenuEntry(" [COLOR ffffa500]%s >>[/COLOR]" % translation(30320), 138,
+                             callb_kwargs={'page_url': page_url})
 
         #BUG: this should sort by original order but it doesn't (see http://trac.kodi.tv/ticket/10252)
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
@@ -235,7 +236,8 @@ def GetPage(page_url, just_episodes=False):
         if int(ADDON.getSetting('radio_paginate_episodes')) == 0:
             if current_page < next_page:
                 page_url = 'http://www.bbc.co.uk' + page_base_url + str(next_page)
-                AddMenuEntry(" [COLOR ffffa500]%s >>[/COLOR]" % translation(30320), page_url, 136, '', '', '')
+                AddMenuEntry(" [COLOR ffffa500]%s >>[/COLOR]" % translation(30320), 136,
+                             callb_kwargs={'page_url': page_url})
 
         #BUG: this should sort by original order but it doesn't (see http://trac.kodi.tv/ticket/10252)
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
@@ -330,7 +332,8 @@ def GetCategoryPage(category, just_episodes=False):
                                                          programme['container']['synopses']['short'] is not None):
                                                        pro_brand_syn = programme['container']['synopses']['short']
                                                if not(page_base_url.startswith(pro_brand_url)):
-                                                   AddMenuEntry(pro_brand, pro_brand_url, 137, pro_icon, pro_brand_syn, '')
+                                                   AddMenuEntry(pro_brand, 137, pro_icon, pro_brand_syn,
+                                                                callb_kwargs={'category': pro_brand_url})
             percent = int(100*page/total_pages)
             pDialog.update(percent,translation(30319))
 
@@ -343,7 +346,7 @@ def GetEpisodes(url):
     GetPage(new_url,True)
 
 
-def AddAvailableLiveStreamItem(name, channelname, iconimage):
+def AddAvailableLiveStreamItem(name, channelname, iconimage=''):
     """Play a live stream based on settings for preferred live source and bitrate."""
     URL = 'https://www.bbc.co.uk/sounds/play/live/'+channelname
     jwt = GetJWT(URL)
@@ -361,7 +364,7 @@ def AddAvailableLiveStreamItem(name, channelname, iconimage):
         # Case 3: Any source
         # Play highest available bitrate
         match = streams
-    PlayStream(name, match[0][0], iconimage, '', '')
+    PlayStream(name, match[0][0])
 
 
 def AddAvailableLiveStreamsDirectory(name, channelname, iconimage):
@@ -371,10 +374,10 @@ def AddAvailableLiveStreamsDirectory(name, channelname, iconimage):
     suppliers = ['', 'Akamai', 'Limelight', 'Cloudfront']
     for href, protocol, supplier, transfer_format, bitrate in streams:
         title = name + ' - [I][COLOR ffd3d3d3]%s - %s kbps[/COLOR][/I]' % (suppliers[supplier], bitrate)
-        AddMenuEntry(title, href, 211, iconimage, '', '', '')
+        AddMenuEntry(title, 211, iconimage, callb_kwargs={'name': title, 'url': href})
 
 
-def PlayStream(name, url, iconimage, description, subtitles_url):
+def PlayStream(name, url):
     html = OpenURL(url)
 
     check_geo = re.search(
@@ -383,7 +386,6 @@ def PlayStream(name, url, iconimage, description, subtitles_url):
         # print "Geoblock detected, raising error message"
         raise GeoBlockedError(translation(30414))
     liz = xbmcgui.ListItem(name)
-    liz.setArt({'icon':'DefaultVideo.png', 'thumb':iconimage})
 
     liz.setInfo(type='Audio', infoLabels={'Title': name})
     liz.setProperty("IsPlayable", "true")
@@ -400,10 +402,10 @@ def AddAvailableStreamsDirectory(name, stream_id, iconimage, description):
     suppliers = ['', 'Akamai', 'Limelight', 'Cloudfront']
     for href, protocol, supplier, transfer_format, bitrate in streams:
         title = name + ' - [I][COLOR ffd3d3d3]%s - %s kbps[/COLOR][/I]' % (suppliers[supplier], bitrate)
-        AddMenuEntry(title, href, 211, iconimage, description, '', '')
+        AddMenuEntry(title, 211, iconimage, description, callb_kwargs={'name': title, 'url': href})
 
 
-def AddAvailableStreamItem(name, url, iconimage, description):
+def AddAvailableStreamItem(name, url):
     """Play a streamm based on settings for preferred catchup source and bitrate."""
     stream_ids = ScrapeAvailableStreams(url)
     if len(stream_ids) < 1:
@@ -422,7 +424,7 @@ def AddAvailableStreamItem(name, url, iconimage, description):
         # Case 3: Any source
         # Play highest available bitrate
         match = streams
-    PlayStream(name, match[0][0], iconimage, description, '')
+    PlayStream(name, match[0][0])
 
 
 
@@ -440,7 +442,7 @@ def ListAtoZ():
 
     for name, url in characters:
         url = 'https://www.bbc.co.uk/programmes/a-z/by/%s/player' % url
-        AddMenuEntry(name, url, 138, '', '', '')
+        AddMenuEntry(name, 138, callb_kwargs={'page_url': url})
 
 
 def ListGenres():
@@ -478,7 +480,7 @@ def ListGenres():
                             # print(cat_name)
                             # print(cat_image)
                             # print(cat_url)
-                            AddMenuEntry(cat_name, cat_url, 137, cat_image, '', '')
+                            AddMenuEntry(cat_name, 137, cat_image, callb_kwargs={'category': cat_url})
 
 
 def ListLive():
@@ -556,9 +558,11 @@ def ListLive():
     for id, name in enabled_chan_list:
         iconimage = 'resource://resource.images.iplayerwww/media/'+id+'.png'
         if ADDON.getSetting('streams_autoplay') == 'true':
-            AddMenuEntry(name, id, 213, iconimage, '', '')
+            AddMenuEntry(name, 213, iconimage,
+                         callb_kwargs={'name': name, 'channelname': id})
         else:
-            AddMenuEntry(name, id, 133, iconimage, '', '')
+            AddMenuEntry(name, 133, iconimage, '', '',
+                         callb_kwargs={'name': name, 'channelname': id, 'iconimage': iconimage})
 
 
 def ListListenList():
@@ -612,7 +616,7 @@ def ListListenList():
 
         if series_id:
             series_title = "[B]%s - %s[/B]" % (station, series_name)
-            AddMenuEntry(series_title, series_id, 131, series_image, description, '')
+            AddMenuEntry(series_title, 131, series_image, description, callb_kwargs={'url': series_id})
 
         if episode_id:
             if series_name:
@@ -668,7 +672,7 @@ def ListFollowing():
 
         if series_id:
             series_title = "[B]%s - %s[/B]" % (station, series_name)
-            AddMenuEntry(series_title, series_id, 131, series_image, description, '')
+            AddMenuEntry(series_title, 131, series_image, description, callb_kwargs={'url': series_id})
 
         if episode_id:
             if series_name:
@@ -798,7 +802,8 @@ def Search(search_entered):
         if int(ADDON.getSetting('radio_paginate_episodes')) == 0:
             if current_page < next_page:
                 page_url = 'http://www.bbc.co.uk' + page_base_url + str(next_page)
-                AddMenuEntry(" [COLOR ffffa500]%s >>[/COLOR]" % translation(30320), page_url, 136, '', '', '')
+                AddMenuEntry(" [COLOR ffffa500]%s >>[/COLOR]" % translation(30320), 136,
+                             callb_kwargs={'page_url': page_url})
 
         #BUG: this should sort by original order but it doesn't (see http://trac.kodi.tv/ticket/10252)
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
@@ -891,7 +896,9 @@ def ScrapeAvailableStreams(url):
 
 def CheckAutoplay(name, url, iconimage, plot, aired=None):
     if ADDON.getSetting('streams_autoplay') == 'true':
-        AddMenuEntry(name, url, 212, iconimage, plot, '', aired=aired)
+        AddMenuEntry(name, 212, iconimage, plot, aired=aired,
+                     callb_kwargs={'name': name, 'url': url})
     else:
-        AddMenuEntry(name, url, 132, iconimage, plot, '', aired=aired)
+        AddMenuEntry(name, 132, iconimage, plot, aired=aired,
+                     callb_kwargs={'name':name, 'url': url, 'iconimage': iconimage, 'description': plot})
 
