@@ -275,14 +275,13 @@ def SignInBBCiD(cookies=cookie_jar):
         # Obtain token cookies for domain .bbc.co.uk.
         resp = session.get('https://session.bbc.co.uk/session')
         if resp.url.startswith('https://www.bbc.co.uk/'):
-            # Being redirected to the main page: already signed in, or expired tokens have been refreshed
+            # Being redirected to the main page: already signed-in, or expired tokens have been refreshed
             return True
-        match = re.search('action="([^"]+)"', resp.text)
-        # The link obtained by the regex refers to a url used by webbrowsers to post only the username.
-        # We skip that, and immediately post both username and password.
-        # Strip the path part from the link to obtain the query string
-        query_string = unescape(match[1][5:])
-        login_url = 'https://account.bbc.com/auth/password' + query_string
+        match = re.search(r'href="/signin/forgotten/credentials\?([^"]+)"', resp.text)
+        # The link obtained by the regex refers to a url used to post a request to reset a password,
+        # but it uses the same querystring as a login request.
+        query_string = unescape(match[1])
+        login_url = 'https://account.bbc.com/auth/password?' + query_string
         resp = session.post(login_url,
                             data={'username': ADDON.getSetting('bbc_id_username'),
                                   'password': ADDON.getSetting('bbc_id_password')})
