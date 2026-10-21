@@ -515,10 +515,10 @@ def ListCategories():
     """
     html = OpenURL('https://www.bbc.co.uk/iplayer')
     match = re.compile(
-        '<a href="/iplayer/categories/(.+?)/featured".*?><span class="lnk__label">(.+?)</span>'
+        '<a href="(/iplayer/[^"]+?)".*?categories-sub-nav__item.*?><span class="lnk__label">(.+?)</span>'
         ).findall(html)
     for url, name in match:
-        if ((name == "View all") or (name == "A-Z")):
+        if name in ("View all", "A-Z"):
             continue
         AddMenuEntry(name, 126, callb_kwargs=dict(url=url))
 
@@ -547,7 +547,7 @@ def ListCategoryFilters(url):
 
 def GetFilteredCategory(url):
     """Parses the programmes available in the category view."""
-    NEW_URL = 'https://www.bbc.co.uk/iplayer/categories/%s/a-z' % url
+    NEW_URL = 'https://www.bbc.co.uk' + url
 
     ScrapeEpisodes(NEW_URL)
 
@@ -845,6 +845,13 @@ def ParseJSON(programme_data, current_url):
                             AddMenuEntry('[B]%s: %s[/B]' % (translation(30314), title), 126,
                                          callb_kwargs=dict(url=id))
 
+        if 'data' in programme_data:
+            # A totally different data structure, found on category pages where the root folder
+            # of the path is `/browse/` instead of `/categories/`.
+            for rail_data in programme_data['data'].values():
+                if rail_data.get('props', {}).get('dataType') == 'contentCollectionData':
+                    AddMenuEntry(**ParseRailItem(rail_data))
+
     xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
     xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_DATE)
     xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
@@ -939,6 +946,14 @@ def ParseEpisode(episode_data):
         'description': description,
         'aired': episode_data.get('release_date_time', '').split('T')[0],
         'total_time': str(duration)
+    }
+
+
+def ParseRailItem(item_data):
+    return {
+        'mode': 127,            # GetGroup()
+        'name': item_data['data']['title'],
+        'callb_kwargs': {'url': item_data['data']['urn']}
     }
 
 
@@ -1507,6 +1522,9 @@ def ScrapeJSON(html):
     if not match:
         format = 2
         match = re.search(r'window.__IPLAYER_REDUX_STATE__ = (.*?);\s*</script>', html, re.DOTALL)
+    if not match:
+        format = 3
+        match = re.search(r'window.__INITIAL_DATA__\s*=\s*(.*?);\s*</script>', html, re.DOTALL)
     if match:
         data = match.group(1)
         json_data = json.loads(data)
@@ -1515,6 +1533,8 @@ def ScrapeJSON(html):
                 json_data = json_data.get('appStoreState')
             elif 'initialState' in json_data:
                 json_data = json_data.get('initialState')
+        elif format == 3:
+            json_data = json.loads(json_data)
         # print json.dumps(json_data, indent=2, sort_keys=True)
     return json_data
 
