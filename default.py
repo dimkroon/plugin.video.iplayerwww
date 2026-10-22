@@ -131,9 +131,6 @@ try:
     elif mode == 133:
         Radio.AddAvailableLiveStreamsDirectory(**params)
 
-    elif mode == 134:
-        Video.ScrapeAtoZEpisodes(**params)
-
     elif mode == 136:
         Radio.GetPage(**params)
 
