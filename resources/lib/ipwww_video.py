@@ -358,8 +358,63 @@ def GetEpisodes(url):
 
 
 def GetGroup(url):
-    new_url = "https://www.bbc.co.uk/iplayer/group/%s" % url
-    ScrapeEpisodes(new_url)
+    page_url = "https://www.bbc.co.uk/iplayer/group/" + url
+    pages = [GetJsonDataWithBBCid(page_url, silent=True)]
+    pagination = pages[0].get('pagination')
+    if pagination:
+        total_pages = pagination.get('totalPages', 1)
+        if total_pages > 1:
+            pages.extend(MultiPageJson(page_url, range(1, total_pages)))
+    for page_data in pages:
+        for episode_data in page_data['entities']['elements']:
+            parse_group_item(episode_data, page_data['entities'].get('group', {}).get('title'))
+
+
+def parse_group_item(episode_data: dict, group_name: str):
+    """Parse an item from a group.
+
+    All group content apears to be of type 'episode'. Some descriptions, however,
+    obviously refer to the whole programme, rather than just one episode, while others
+    definitely describe a particular episode. In groups like those from a category page,
+    one would expect an item to be listed as a programme folder, but other groups may
+    list various episodes from different programmes based on a common theme.
+
+    This function attempts to decide whether an item should be displayed as a programme
+    folder or as an episode, preferring programme folders whenever possible, but more
+    importantly, trying to match the displayed item with its description.
+
+    """
+    if episode_data['type'] == 'episode':
+        category = (episode_data.get('labels') or {}).get('category')
+        synopses = episode_data.get('synopses', '')
+        programme_type = episode_data.get('programme_type')
+        if (programme_type == 'narrative'
+                and category not in ('Documentary', )
+                and 'editorial' in synopses):
+            result = ParseEpisodeAsProgramme(episode_data)
+            url = result.pop('url')
+            AddMenuEntry(mode=128, callb_kwargs={'page_url': url}, **result)
+        else:
+            result = ParseEpisode(episode_data)
+            programme_id = episode_data['tleo_id']
+            if programme_id and episode_data['id'] != programme_id:
+                result['context_mnu'] = [CtxMnuViewAllEpisodes(programme_id)]
+            CheckAutoplay(**result)
+    else:
+        xbmc.log(f"[IPWWW_VIDEO] unsupported type '{episode_data['type']}' of '{episode_data['title']}' in group '{group_name}'.")
+
+
+def MultiPageJson(base_url, page_range):
+    from concurrent import futures
+
+    with futures.ThreadPoolExecutor(max_workers=16) as executor:
+        res = [executor.submit(GetJsonDataWithBBCid,
+                               f'{base_url}?page={page_nr + 1}',
+                               silent=True,
+                               retry=False) for page_nr in page_range]
+        futures.wait(res)
+    return (r.result() for r in res)
+
 
 
 def ScrapeEpisodes(page_url):
@@ -548,7 +603,6 @@ def ListCategoryFilters(url):
 def GetFilteredCategory(url):
     """Parses the programmes available in the category view."""
     NEW_URL = 'https://www.bbc.co.uk' + url
-
     ScrapeEpisodes(NEW_URL)
 
 
@@ -790,20 +844,19 @@ def ParseJSON(programme_data, current_url):
         if 'groups' in programme_data:
             groups = programme_data.get('groups')
             for entity in groups:
-                for item in entity['entities']:
-                    if 'props' in item:
-                        item = item.get("props")
-                    ParseSingleJSON(None, item, None, added_playables, added_directories)
-
-                title = ''
-                id = ''
                 title = entity.get('title')
                 id = entity.get('id')
-                if (title and id):
-                    episodes_url = 'https://www.bbc.co.uk/iplayer/group/%s' % id
-                    if not episodes_url in added_directories:
-                        AddMenuEntry('[B]%s: %s[/B]' % (translation(30314), title), 128,
-                                     callb_kwargs=dict(page_url=episodes_url))
+                if title and id:
+                    # list the group folder
+                    AddMenuEntry('[B]%s[/B]' % title, 127,
+                                 description=translation(30314),
+                                 callb_kwargs=dict(url=id))
+                else:
+                    # List the group's content
+                    for item in entity['entities']:
+                        if 'props' in item:
+                            item = item.get("props")
+                        ParseSingleJSON(None, item, None, added_playables, added_directories)
 
         if 'highlights' in programme_data:
             highlights = programme_data.get('highlights')
@@ -812,39 +865,38 @@ def ParseJSON(programme_data, current_url):
                 for item in entity:
                     if 'props' in item:
                         item = item.get("props")
-                    ParseSingleJSON(None, item, None, added_playables, added_directories)
+                    parse_group_item(item, 'highlights')
 
         if 'bundles' in programme_data:
             bundles = programme_data.get('bundles')
             for bundle in bundles:
-                entity = ''
-                entity = bundle.get('entities')
-                if entity:
-                    for item in entity:
-                        ParseSingleJSON(None, item, None, added_playables, added_directories)
-                journey = ''
+                title = bundle.get('title', {}).get('default')
                 journey = bundle.get('journey')
                 if journey:
-                    id = ''
                     id = journey.get('id')
-                    type = ''
                     type = journey.get('type')
-                    title = ''
-                    title = bundle.get('title').get('default')
                     if title:
-                        if (id and (type == 'group')):
-                            if (id == 'popular'):
-                                AddMenuEntry('[B]%s: %s[/B]' % (translation(30314), title),
-                                             'url', 105)
-                            else:
-                                episodes_url = 'https://www.bbc.co.uk/iplayer/group/%s' % id
-                                if not episodes_url in added_directories:
-                                    AddMenuEntry('[B]%s: %s[/B]' % (translation(30314), title), 128,
-                                                 callb_kwargs=dict(page_url=episodes_url))
-                        if (id and (type == 'category')):
+                        if id and (type == 'group'):
+                            AddMenuEntry('[B]%s[/B]' % title, 127,
+                                         description=translation(30314),
+                                         callb_kwargs=dict(url=id))
+                        elif id and (type == 'category'):
                             cat_url = f"/iplayer/categories/{id}"
-                            AddMenuEntry('[B]%s: %s[/B]' % (translation(30314), title), 126,
+                            AddMenuEntry('[B]%s[/B]' % title, 126,
+                                         description=translation(30314),
                                          callb_kwargs=dict(url=cat_url))
+                else:
+                    bundle_id = bundle.get('id')
+                    if bundle_id == 'hero':
+                        for item in bundle['entities']:
+                            episode_data = ParseHeroItem(item.get('episode'))
+                            if episode_data:
+                                CheckAutoplay(**episode_data)
+                    elif bundle_id:
+                        # Use 198 - ListRecommendations() to parse the bundle's content from the original page.
+                        AddMenuEntry('[B]%s[/B]' % title, 198,
+                                     description=translation(30314),
+                                     callb_kwargs=dict(item_id=bundle_id, page_url=current_url))
 
         if 'data' in programme_data:
             # A totally different data structure, found on category pages where the root folder
@@ -871,18 +923,28 @@ def SetSortMethods(*additional_methods):
         xbmcplugin.addSortMethod(handle, method)
 
 
-def SelectSynopsis(synopses):
-    if synopses is None:
+def SelectSynopsis(synopses: dict | str | None, is_playable: bool= True):
+    if not synopses:
         return ''
     try:
-        return (synopses.get('editorial')
-                or synopses.get('medium')
-                or synopses.get('large')
-                or synopses.get('small')
-                or synopses.get('programme_small')
-                or synopses.get('programmeSmall')      # Seen in bundles on iplayer's main page.
-                or synopses.get('live')
-                or '')
+        if is_playable:
+            return (synopses.get('medium')
+                    or synopses.get('large')
+                    or synopses.get('small')
+                    or synopses.get('editorial')
+                    or synopses.get('programme_small')
+                    or synopses.get('programmeSmall')      # Seen in bundles on iplayer's main page.
+                    or synopses.get('live')
+                    or '')
+        else:
+            return (synopses.get('programme_small')
+                    or synopses.get('programmeSmall')  # Seen in bundles on iplayer's main page.
+                    or synopses.get('editorial')
+                    or synopses.get('medium')
+                    or synopses.get('large')
+                    or synopses.get('small')
+                    or synopses.get('live')
+                    or '')
     except AttributeError:
         # Allow for the odd event that `synopses` is a single string.
         if isinstance(synopses, str):
@@ -891,15 +953,23 @@ def SelectSynopsis(synopses):
             raise
 
 
-def SelectImage(images):
+def SelectImage(images, is_playable=True):
     if not images:
         return 'DefaultFolder.png'
-    return(images.get('standard')
-           or images.get('default')
-           or images.get('promotional')
-           or images.get('promotional_with_logo')
-           or images.get('portrait')
-           or 'DefaultFolder.png').replace('{recipe}', '832x468')
+    if is_playable:
+        return (images.get('standard')
+                or images.get('default')
+                or images.get('portrait')
+                or images.get('promotional')
+                or images.get('promotional_with_logo')
+                or 'DefaultFolder.png').replace('{recipe}', '832x468')
+    else:
+        return (images.get('promotional_with_logo')
+                or images.get('promotional')
+                or images.get('portrait')
+                or images.get('standard')
+                or images.get('default')
+                or 'DefaultFolder.png').replace('{recipe}', '832x468')
 
 
 def ParseProgramme(progr_data, playable=False):
@@ -914,14 +984,24 @@ def ParseProgramme(progr_data, playable=False):
             'name': '[B]{}[/B] - {} episodes available'.format(progr_data['title'], progr_data['count'])
         }
 
+    labels = progr_data.get('labels') or {}     # Labels can be None or absent.
+    category = labels.get('category')
+
     programme.update({
-        'iconimage': progr_data.get('images', {}).get('standard', 'DefaultFolder.png').replace('{recipe}', '832x468'),
-        'description': SelectSynopsis(progr_data['synopses'])
+        'iconimage': SelectImage(progr_data.get('images'), is_playable=False),
+        'description': '\n'.join(t for t in (category, SelectSynopsis(progr_data['synopses'], False)) if t),
     })
     return programme
 
 
-def ParseEpisode(episode_data):
+def ParseEpisode(episode_data: dict, is_standalone: bool = True):
+    """Parse a dict with episode info.
+
+    :param is_standalone: Set to True if the episode is not listed under its own programme
+        or series folder. Default is True, since most callers proces episodes in other
+        lisings than their programme.
+
+    """
     title = episode_data.get('title', '')
     if isinstance(title, dict):
         title= title.get('default', '')
@@ -930,8 +1010,11 @@ def ParseEpisode(episode_data):
         subtitle = subtitle.get('default')
     if subtitle:
         title = ' - '.join((title, subtitle))
+    labels = episode_data.get('labels') or {}   # This field can have value None, or be absent.
+    category = labels.get('category')
     description = SelectSynopsis(episode_data.get('synopses') or episode_data.get('synopsis'))
     duration = ''
+    availability = ''
     version_data = episode_data.get('versions')
     if version_data:
         version = version_data[0]
@@ -939,17 +1022,51 @@ def ParseEpisode(episode_data):
         availability = version.get('availability', {}).get('remaining')
         if isinstance(availability, dict):
             availability = availability.get('text', '')
-        if availability:
-            description = '\n\n'.join((description, availability))
+    description = '\n\n'.join(t for t in (category, description, availability) if t)
 
     return {
         'url': 'https://www.bbc.co.uk/iplayer/episode/' + episode_data['id'],
         'name': title,
-        'iconimage': SelectImage(episode_data.get('images') or episode_data.get('image')),
+        'iconimage': SelectImage(episode_data.get('images') or episode_data.get('image'), not is_standalone),
         'description': description,
         'aired': episode_data.get('release_date_time', '').split('T')[0],
         'total_time': str(duration)
     }
+
+
+def ParseEpisodeAsProgramme(episode_data):
+    """Parse Episode data, but present is as a programme folder.
+
+    On some pages, in particular groups (A.K.A. collections), all items are of the type
+    'episodes', while they link to the programme's page with all episodes and series.
+    This function parses episode data as a programme.
+
+    """
+    title = episode_data.get('title', '')
+    if isinstance(title, dict):
+        title = title.get('default', '')
+    description = SelectSynopsis(episode_data.get('synopses') or episode_data.get('synopsis'), False)
+    category = episode_data.get('labels', {}).get('category')
+
+    return {
+        'url': 'https://www.bbc.co.uk/iplayer/episodes/' + episode_data['tleo_id'],
+        'name': f"[B]{title}[/B]",
+        'iconimage': SelectImage(episode_data.get('images') or episode_data.get('image'), is_playable=False),
+        'description': '\n'.join(t for t in (category, description) if t),
+    }
+
+
+def ParseHeroItem(episode_data):
+    try:
+        item = ParseEpisode(episode_data)
+        item['name'] = f"[B][COLOR orange]{item['name']}[/COLOR][/B]"
+        programme_id = episode_data.get('tleo', {}).get('id')
+        if programme_id and programme_id != episode_data['id']:
+            ctx_mnu = [CtxMnuViewAllEpisodes(programme_id)]
+            item['context_mnu'] = ctx_mnu
+        return item
+    except Exception as err:
+        xbmc.log(f"[IPWWW-VIDEO] Failed to parse hero item: {repr(err)}")
 
 
 def ParseRailItem(item_data):
@@ -1092,7 +1209,7 @@ def AddAvailableLiveStreamsDirectory(name, channelname, iconimage, watch_from_st
                      callb_kwargs=dict(url=url, replay_chan_id=replay_chan_id))
 
 
-def GetJsonDataWithBBCid(url, retry=True):
+def GetJsonDataWithBBCid(url, silent= False, retry=True):
     html = OpenURL(url)
     json_data = ScrapeJSON(html)
     if not json_data:
@@ -1111,7 +1228,10 @@ def GetJsonDataWithBBCid(url, retry=True):
             CreateBaseDirectory('video')
     else:
         xbmc.log('[ipwww_video] [Error] GetJsonDataWithBBCid(): still not signed in at second attempt')
-        return
+        if silent:
+            return json_data
+        else:
+            return None
 
 
 def ListWatching():
@@ -1144,9 +1264,7 @@ def ListWatching():
 
         if episode.get('id') != programme_id:
             # A programme with multiple episodes; add a 'View all episodes' context menu item.
-            all_episodes_link = 'https://www.bbc.co.uk/iplayer/episodes/' + programme['id']
-            ct_menus.append((translation(30600),
-                             f'Container.Update(plugin://plugin.video.iplayerwww/?mode=128&page_url={all_episodes_link})'))
+            ct_menus.append(CtxMnuViewAllEpisodes(programme['id']))
 
         if programme_id:
             # Add a context menu item 'Remove'
@@ -1154,6 +1272,13 @@ def ListWatching():
                              f'RunPlugin(plugin://plugin.video.iplayerwww?mode=301&episode_id={programme_id})'))
 
         CheckAutoplay(**item_data)
+
+
+def CtxMnuViewAllEpisodes(programme_id: str):
+    """Add a context menu item 'View all episodes'."""
+    all_episodes_link = 'https://www.bbc.co.uk/iplayer/episodes/' + programme_id
+    return(translation(30600),
+           f'Container.Update(plugin://plugin.video.iplayerwww/?mode=128&page_url={all_episodes_link})')
 
 
 def RemoveWatching(episode_id):
@@ -1196,8 +1321,8 @@ def RemoveFavourite(programme_id):
     xbmc.executebuiltin('Container.Refresh')
 
 
-def ListRecommendations(item_id=None):
-    data = GetJsonDataWithBBCid('https://www.bbc.co.uk/iplayer')
+def ListRecommendations(item_id: str = '', page_url: str = 'https://www.bbc.co.uk/iplayer'):
+    data = GetJsonDataWithBBCid(page_url)
     if not data:
         return
 
@@ -1212,10 +1337,7 @@ def ListRecommendations(item_id=None):
                         continue
                     tleo_id = episode.get('tleo', {}).get('id')
                     if tleo_id and tleo_id != episode['id']:
-                        all_episodes_link = 'https://www.bbc.co.uk/iplayer/episodes/' + tleo_id
-                        item_data['context_mnu'] = [
-                            (translation(30600),        # View all episodes
-                             f'Container.Update(plugin://plugin.video.iplayerwww/?mode=128&page_url={all_episodes_link})')]
+                        item_data['context_mnu'] = [CtxMnuViewAllEpisodes(tleo_id)]
                     CheckAutoplay(**item_data)
                 SetSortMethods(xbmcplugin.SORT_METHOD_DATE)
                 return
