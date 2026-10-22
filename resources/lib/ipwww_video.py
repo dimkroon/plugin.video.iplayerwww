@@ -887,7 +887,7 @@ def ParseEpisode(episode_data: dict, is_standalone: bool = True):
 
     :param is_standalone: Set to True if the episode is not listed under its own programme
         or series folder. Default is True, since most callers proces episodes in other
-        lisings than their programme.
+        listings than their programme.
 
     """
     title = episode_data.get('title', '')
