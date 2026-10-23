@@ -241,7 +241,7 @@ msgid "It may take a few hours before these settings take effect.\nTo force an u
 msgstr ""
 
 msgctxt "#30300"
-msgid "Highlights"
+msgid "Home"
 msgstr ""
 
 msgctxt "#30301"
@@ -309,7 +309,7 @@ msgid "This programme is part of the collection"
 msgstr ""
 
 msgctxt "#30317"
-msgid "Channel Highlights"
+msgid "Channels"
 msgstr ""
 
 msgctxt "#30318"
@@ -473,11 +473,11 @@ msgid "Select main menu entries"
 msgstr ""
 
 msgctxt "#30511"
-msgid "iPlayer: Highlights"
+msgid "iPlayer: Home"
 msgstr ""
 
 msgctxt "#30512"
-msgid "iPlayer: Channel Highlights"
+msgid "iPlayer: Channels"
 msgstr ""
 
 msgctxt "#30513"
