@@ -891,15 +891,13 @@ def ParseJSON(programme_data, current_url):
                     if item_data:
                         AddMenuEntry(**item_data)
 
-    xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
-    xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_DATE)
-    xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
+    SetSortMethods(xbmcplugin.SORT_METHOD_DATE)
 
 
 def SetSortMethods(*additional_methods):
     """Set a few standard sort methods and optional additional methods"""
     sort_methods = [xbmcplugin.SORT_METHOD_UNSORTED,
-                    xbmcplugin.SORT_METHOD_TITLE,
+                    xbmcplugin.SORT_METHOD_LABEL,
                     xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE]
     sort_methods.extend(additional_methods)
     handle = int(sys.argv[1])
