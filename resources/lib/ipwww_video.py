@@ -10,7 +10,7 @@ import time
 import json
 
 from datetime import timedelta
-from operator import itemgetter
+from urllib.parse import parse_qsl
 
 from resources.lib.ipwww_common import (
     translation, AddMenuEntry, OpenURL, OpenRequest, CheckLogin, CreateBaseDirectory,
@@ -507,7 +507,8 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
     episode_id = ''
 
     if 'episode' in item:
-        # An episode in a programme/series folder
+        # An episode in a programme/series folder, but could also be in a 'More Like This' folder.
+        # TODO: Find a way to add context menu to items from More like this.
         CheckAutoplay(**ParseEpisode(item['episode'], is_standalone=False))
         return
     else:
@@ -622,6 +623,68 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
             added_playables.append(main_url)
 
 
+def parse_slices(available_slices, pgm_name, base_url, querystring):
+    """Parse the slices and add series folders whenever appropriate.
+
+    Returns True if series folders have been created, and the calling parser is
+    not to parse individual episodes, i.e. only the series folders will be shown.
+    Returns False if the episodes of a series should be shown and the caller is to
+    continue parsing episodes.
+
+    This will create 'More Like This' when available, and series folders when more
+    than one series is available. If only one series is available, no series folder
+    will be created and the return value will be False.
+
+    """
+    if not available_slices:
+        return False
+
+    query_params = dict(parse_qsl(querystring))
+    is_second_page = 'page' in query_params
+    if 'seriesId' in query_params:
+        # Listing the content of a series folder, continue with parsing episodes.
+        return False
+
+    series_list = []
+    more_like_this = None
+
+    for slice in available_slices:
+        id = slice.get('id')
+        if id == 'more-like-this':
+            more_like_this = slice
+        elif id == 'trailers':
+            continue
+        elif id:
+            series_list.append(slice)
+
+    # Prevent duplicating series folders from subsequent pages.
+    # Only continue parsing episodes when only one series is available
+    if is_second_page:
+        return len(series_list) > 1
+
+    if more_like_this:
+        title = more_like_this['title']
+        # The titles in slices on an episode page are dicts, as opposed to simple strings on a programme page.
+        if isinstance(title, dict):
+            title = title['default']
+        AddMenuEntry('[B]%s: %s[/B]' % (pgm_name, title), 128,
+                     callb_kwargs=dict(page_url=base_url + '?seriesId=' + more_like_this['id']))
+
+    if len(series_list) > 1:
+        # List series folders if there are more than one.
+        for series in series_list:
+            title = series['title']
+            if isinstance(title, dict):
+                title = title['default']
+            series_url = base_url + '?seriesId=' + series['id']
+            AddMenuEntry('[B]%s: %s[/B]' % (pgm_name, title), 128,
+                         callb_kwargs=dict(page_url=series_url))
+        return True
+    else:
+        # Only one series available, no series folder is created and keep parsing to show its episodes.
+        return False
+
+
 def ParseJSON(programme_data, current_url):
     """Parses the JSON data containing programme information of a page. Contains a lot of fallbacks
     """
@@ -631,28 +694,12 @@ def ParseJSON(programme_data, current_url):
 
     if programme_data:
         name = ''
-        if 'header' in programme_data:
-            if 'title' in programme_data['header']:
-                name = programme_data['header']['title']
-            url_split = current_url.replace('&','?').split('?')
-            is_paginated = False
-            """ Avoid duplicate entries by checking if we are on page >1
-            """
-            for part in url_split:
-                if part.startswith('page'):
-                    is_paginated = True
-            if not is_paginated:
-                if 'availableSlices' in programme_data['header']:
-                    current_series = programme_data['header']['currentSliceId']
-                    slices = programme_data['header']['availableSlices']
-                    if slices is not None:
-                        for series in slices:
-                            if series['id'] == current_series:
-                                continue
-                            base_url = url_split[0]
-                            series_url = base_url + '?seriesId=' + series['id']
-                            AddMenuEntry('[B]%s: %s[/B]' % (name, series['title']), 128,
-                                         callb_kwargs=dict(page_url=series_url))
+        base_url, _, qs = current_url.partition('?')
+        header = programme_data.get('header')
+        if header:
+            name = header.get('title', '')
+            if parse_slices(header.get('availableSlices'), name, base_url, qs):
+                return
 
         programmes = None
         if 'currentLetter' in programme_data:
@@ -665,22 +712,20 @@ def ParseJSON(programme_data, current_url):
             if 'results' in programme_data['entities']:
                 programmes = programme_data['entities']['results']
         elif 'relatedEpisodes' in programme_data:
-            if 'episodes' in programme_data['relatedEpisodes']:
-                programmes = programme_data['relatedEpisodes']['episodes']
-            if 'slices' in programme_data['relatedEpisodes']:
-                if programme_data['relatedEpisodes']['slices'] is not None:
-                    if 'episode' in programme_data:
-                        if 'title' in programme_data['episode']:
-                            name = programme_data['episode']['title']
-                    url_split = current_url.replace('&','?').split('?')
-                    current_series = programme_data['relatedEpisodes']['currentSliceId']
-                    for series in programme_data['relatedEpisodes']['slices']:
-                        if series['id'] == current_series:
-                            continue
-                        base_url = url_split[0]
-                        series_url = base_url + '?seriesId=' + series['id']
-                        AddMenuEntry('[B]%s: %s[/B]' % (name, series['title']['default']), 128,
-                                     callb_kwargs=dict(page_url=series_url))
+            # This is an episode page treated as programme page.
+            related_episodes = programme_data.get('relatedEpisodes')
+            main_episode = programme_data.get('episode', {})
+            name = main_episode.get('title', '')
+            if parse_slices(related_episodes.get('slices'), name, base_url, qs):
+                return
+            episodes = related_episodes.get('episodes')
+            if episodes:
+                programme_id = main_episode.get('tleoId')
+                for item in episodes:
+                    episode = item['episode']
+                    episode['tleo_id'] = programme_id
+                    CheckAutoplay(**ParseEpisode(episode, False))
+                return
         elif 'items' in programme_data:
             # This must be Watchlist or Continue Watching.
             programmes = programme_data['items']
