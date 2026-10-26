@@ -571,3 +571,12 @@ msgstr ""
 msgctxt "#30605"
 msgid "Clear search history"
 msgstr ""
+
+msgctxt "#30606"
+msgid "Add to watchlist"
+msgstr ""
+
+msgctxt "#30607"
+msgid "Programme added to watchlist"
+msgstr ""
+

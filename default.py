@@ -185,7 +185,9 @@ try:
     elif mode == 302:
         Video.RemoveFavourite(**params)
 
-    # Reserved mode 303 for AddFavourite
+    elif mode == 303:
+        xbmc.log(f'[iPlayer WWW] calling handler of mode 303', xbmc.LOGWARNING)
+        Video.AddFavourite(**params)
 
     elif mode == 304:
         from resources.lib.ipwww_search import context_menu
