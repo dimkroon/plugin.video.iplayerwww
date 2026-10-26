@@ -15,7 +15,7 @@ from operator import itemgetter
 from resources.lib.ipwww_common import (
     translation, AddMenuEntry, OpenURL, OpenRequest, CheckLogin, CreateBaseDirectory,
     GetCookieJar, ParseImageUrl, download_subtitles, GeoBlockedError, WebRequestError,
-    iso_duration_2_seconds, PostJson, strptime, addonid, DeleteUrl, ProgressDlg, utf8_quote_plus)
+    duration_2_secs, PostJson, strptime, addonid, DeleteUrl, ProgressDlg, utf8_quote_plus)
 from resources.lib import ipwww_progress
 
 import xbmc
@@ -494,32 +494,9 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
     title = ''
 
     if 'episode' in item:
-        subitem = item['episode']
-        if 'id' in subitem:
-            main_url = 'https://www.bbc.co.uk/iplayer/episode/' + subitem.get('id')
-        if subitem.get('subtitle'):
-            if 'default' in subitem.get('subtitle'):
-                sub = subitem['subtitle'].get('default')
-                if sub is not None:
-                    sub = ' - '+sub
-                else:
-                    sub = ''
-                if 'title' in subitem:
-                    if 'default' in subitem.get('title'):
-                        title = '%s%s' % (subitem['title'].get('default'), sub)
-                else:
-                     title = '%s%s' % (name, sub)
-        elif subitem.get('title'):
-            if 'default' in subitem.get('title'):
-                title = subitem['title'].get('default')
-        else:
-            title = name
-        if subitem.get('synopsis'):
-            if 'small' in subitem.get('synopsis'):
-                synopsis = subitem['synopsis'].get('small')
-        if subitem.get('image'):
-            if 'default' in subitem.get('image'):
-                icon = subitem['image'].get('default').replace("{recipe}","832x468")
+        # An episode in a programme/series folder
+        CheckAutoplay(**ParseEpisode(item['episode'], is_standalone=False))
+        return
     else:
         if 'count' in item:
             if item['count']>1:
@@ -692,7 +669,20 @@ def ParseJSON(programme_data, current_url):
                 elif 'contentItemProps' in item:
                     meta = item.get('type')
                     item = item.get('contentItemProps')
-                ParseSingleJSON(meta, item, name, added_playables, added_directories)
+                item_type = item.get('type')
+                if item_type == 'episode':
+                    episode_dta = ParseEpisode(item)
+                    if episode_dta:
+                        CheckAutoplay(**episode_dta)
+                elif item_type in ('programme', 'programme_large'):
+                    is_playable, pgm_dta = ParseProgramme(item)
+                    if is_playable:
+                        CheckAutoplay(**pgm_dta)
+                    else:
+                        url = pgm_dta.pop('url')
+                        AddMenuEntry(mode=128, **pgm_dta, callb_kwargs=dict(page_url=url))
+                else:
+                    ParseSingleJSON(meta, item, name, added_playables, added_directories)
 
         # The next section is for global and channel highlights. They are a bit tricky.
         groups = None
@@ -827,16 +817,33 @@ def SelectImage(images, is_playable=True):
                 or 'DefaultFolder.png').replace('{recipe}', '832x468')
 
 
-def ParseProgramme(progr_data, playable=False):
+def ParseProgramme(progr_data):
+    playable = progr_data.get('programme_type') == 'one-off' or progr_data.get('count') == 1
+
     if playable:
+        children = progr_data.get('initial_children')
+        if children:
+            try:
+                programme = ParseEpisode(children[0])
+                return playable, programme
+            except (KeyError, IndexError):
+                pass
+
         programme = {
             'url': 'https://www.bbc.co.uk/iplayer/episode/' + progr_data['id'],
             'name': progr_data['title']
         }
+
     else:
+        num_episodes = progr_data.get('count')
+        if num_episodes:
+            title = '[B]{}[/B] - {} episodes available'.format(progr_data['title'], num_episodes)
+        else:
+            title = '[B]{}[/B]'.format(progr_data['title'])
+
         programme = {
             'url': 'https://www.bbc.co.uk/iplayer/episodes/' + progr_data['id'],
-            'name': '[B]{}[/B] - {} episodes available'.format(progr_data['title'], progr_data['count'])
+            'name': title
         }
 
     labels = progr_data.get('labels') or {}     # Labels can be None or absent.
@@ -846,7 +853,7 @@ def ParseProgramme(progr_data, playable=False):
         'iconimage': SelectImage(progr_data.get('images'), is_playable=False),
         'description': '\n'.join(t for t in (category, SelectSynopsis(progr_data['synopses'], False)) if t),
     })
-    return programme
+    return playable, programme
 
 
 def ParseEpisode(episode_data: dict, is_standalone: bool = True):
@@ -873,7 +880,8 @@ def ParseEpisode(episode_data: dict, is_standalone: bool = True):
     version_data = episode_data.get('versions')
     if version_data:
         version = version_data[0]
-        duration = iso_duration_2_seconds(version.get('duration', {}).get('value', '')) or ''
+        duration_data = version.get('duration', {})
+        duration = duration_2_secs(duration_data.get('value') or duration_data.get('text')) or ''
         availability = version.get('availability', {}).get('remaining')
         if isinstance(availability, dict):
             availability = availability.get('text', '')
@@ -1162,10 +1170,10 @@ def ListFavourites():
 
         ct_mnu = [(translation(30601),
                    f'RunPlugin(plugin://plugin.video.iplayerwww?mode=302&programme_id={programme["id"]})')]
-        if programme['count'] == 1:
-            CheckAutoplay(context_mnu=ct_mnu, **ParseProgramme(programme, playable=True))
+        is_playable, pgm_data = ParseProgramme(programme)
+        if is_playable:
+            CheckAutoplay(context_mnu=ct_mnu, **pgm_data)
         else:
-            pgm_data = ParseProgramme(programme)
             url = pgm_data.pop('url')
             AddMenuEntry(mode=128, context_mnu=ct_mnu, **pgm_data, callb_kwargs=dict(page_url=url))
     SetSortMethods()

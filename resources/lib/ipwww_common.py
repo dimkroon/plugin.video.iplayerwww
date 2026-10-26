@@ -469,6 +469,56 @@ def utf8_unquote_plus(str):
     return urllib.parse.unquote_plus(str)
 
 
+
+def duration_2_secs(duration: str) -> int | None:
+
+    """Convert a string containing duration in various formats to the corresponding number of seconds.
+
+    supported formats:
+
+    * '62' - a single number of minutes
+    * '1,32 hrs' - hours as float
+    * '78 min[s]' - number of minutes as integer, with optional 's'.
+    * '1h 35m' - hours and minutes, where both hours and minutes are optional.
+    * 'PT1H32M' - ISO 8601 duration.
+
+    """
+
+    if not duration:
+        return None
+
+    if duration.startswith("P"):
+        return iso_duration_2_seconds(duration)
+
+    hours = 0
+    minutes = 0
+
+    try:
+        splits = duration.split()
+        if len(splits) == 2:
+            # format '62 min[s]'
+            if splits[1] in ('min', 'mins'):
+                return int(splits[0]) * 60
+            if splits[1] == 'hrs':
+                # format '1.56 hrs'
+                return int(float(splits[0]) * 3600)
+
+        for t_str in splits:
+            if t_str.endswith('h'):
+                # format '2h 15m' or '2h'
+                hours = int(t_str[:-1])
+            elif t_str.endswith('m'):
+                minutes = int(t_str[:-1])
+            elif len(splits) == 1:
+                # format '62'
+                minutes = int(t_str)
+
+        return int(hours) * 3600 + int(minutes) * 60
+
+    except (ValueError, AttributeError, IndexError):
+        return None
+
+
 def iso_duration_2_seconds(iso_str: str) -> int:
     """Convert an ISO 8601 duration string into seconds.
 
@@ -535,37 +585,28 @@ def AddMenuEntry(name, mode, iconimage=None, description='', aired=None, resume_
     listitem = xbmcgui.ListItem(label=name, label2=description, offscreen=True)
     listitem.setArt({'icon':'DefaultFolder.png', 'thumb':iconimage})
 
+    info = {
+        "title": name,
+        "plot": description,
+        "plotoutline": description}
+
+    if aired:
+        info.update({
+            "date": date_string,
+            "aired": aired})
+
     if mode in (201, 202, 203, 204, 205, 211, 212, 213):
-        if aired:
-            listitem.setInfo("video", {
-                "title": name,
-                "plot": description,
-                "plotoutline": description,
-                "date": date_string,
-                "aired": aired,
-                "mediatype" : "episode"})
-        else:
-            listitem.setInfo("video", {
-                "title": name,
-                "plot": description,
-                "plotoutline": description,
-                "mediatype" : "episode"})
+        # Playable items
+        info["mediatype"] = "episode"
+
+        if total_time:
+            info['duration'] = int(total_time)
+
         if resume_time:
             listitem.setProperty('ResumeTime', resume_time)
             listitem.setProperty('TotalTime', total_time if total_time else '7200')
-    else:
-        if aired:
-            listitem.setInfo("video", {
-                "title": name,
-                "plot": description,
-                "plotoutline": description,
-                "date": date_string,
-                "aired": aired})
-        else:
-            listitem.setInfo("video", {
-                "title": name,
-                "plot": description,
-                "plotoutline": description})
+
+    listitem.setInfo("video", info)
 
     if context_mnu:
         listitem.addContextMenuItems(context_mnu)
