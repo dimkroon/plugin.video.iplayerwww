@@ -551,7 +551,7 @@ def strptime(dt_str: str, format: str):
 
 
 def AddMenuEntry(name, mode, iconimage=None, description='', aired=None, resume_time='', total_time='',
-                 context_mnu=None, item_position=None, callb_kwargs=None):
+                 programme_id=None, episode_id=None, context_mnu=None, item_position=None, callb_kwargs=None):
     """Adds a new line to the Kodi list of playables.
     It is used in multiple ways in the plugin, which are distinguished by modes.
     """
@@ -607,6 +607,15 @@ def AddMenuEntry(name, mode, iconimage=None, description='', aired=None, resume_
             listitem.setProperty('TotalTime', total_time if total_time else '7200')
 
     listitem.setInfo("video", info)
+
+    if context_mnu is None:
+        context_mnu = []
+    if programme_id:
+        context_mnu.append((translation(30606),
+                            f'RunPlugin(plugin://plugin.video.iplayerwww?mode=303&programme_id={programme_id})'))
+    elif episode_id:
+        context_mnu.append((translation(30606),
+                            f'RunPlugin(plugin://plugin.video.iplayerwww?mode=303&episode_id={episode_id})'))
 
     if context_mnu:
         listitem.addContextMenuItems(context_mnu)
