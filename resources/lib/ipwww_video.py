@@ -504,8 +504,7 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
     episode_id = ''
 
     if 'episode' in item:
-        # An episode in a programme/series folder, but could also be in a 'More Like This' folder.
-        # TODO: Find a way to add context menu to items from More like this.
+        # An episode in a programme/series folder.
         CheckAutoplay(**ParseEpisode(item['episode'], is_standalone=False))
         return
     else:
