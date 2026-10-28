@@ -348,10 +348,6 @@ msgctxt "#30326"
 msgid "BBCiD Sign Out"
 msgstr ""
 
-msgctxt "#30327"
-msgid "Channel A-Z"
-msgstr ""
-
 msgctxt "#30328"
 msgid "Red Button"
 msgstr ""
@@ -486,10 +482,6 @@ msgstr ""
 
 msgctxt "#30514"
 msgid "iPlayer: Programme List A-Z"
-msgstr ""
-
-msgctxt "#30515"
-msgid "iPlayer: Channel A-Z"
 msgstr ""
 
 msgctxt "#30516"

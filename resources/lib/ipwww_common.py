@@ -688,8 +688,6 @@ def CreateBaseDirectory(content_type=None):
             AddMenuEntry(translation(30301), 105, icondir+'popular.png')
         if ADDON.getSetting("menu_video_az") == 'true':
             AddMenuEntry(translation(30302), 102, icondir+'lists.png')
-        if ADDON.getSetting("menu_video_channel_az") == 'true':
-            AddMenuEntry(translation(30327), 120, icondir+'lists.png')
         if ADDON.getSetting("menu_video_categories") == 'true':
             AddMenuEntry(translation(30303), 103, icondir+'lists.png')
         if ADDON.getSetting("menu_video_search") == 'true':
@@ -739,9 +737,6 @@ def CreateBaseDirectory(content_type=None):
                          icondir+'popular.png')
         if ADDON.getSetting("menu_video_az") == 'true':
             AddMenuEntry((translation(30323)+translation(30302)), 102,
-                         icondir+'lists.png')
-        if ADDON.getSetting("menu_video_channel_az") == 'true':
-            AddMenuEntry((translation(30323)+translation(30327)), 120,
                          icondir+'lists.png')
         if ADDON.getSetting("menu_video_categories") == 'true':
             AddMenuEntry((translation(30323)+translation(30303)), 103,

@@ -271,11 +271,6 @@
                                     <default>true</default>
                                     <control type="toggle"/>
                                 </setting>
-                                <setting id="menu_video_channel_az" type="boolean" label="30515" help="">
-                                    <level>0</level>
-                                    <default>true</default>
-                                    <control type="toggle"/>
-                                </setting>
                                 <setting id="menu_video_categories" type="boolean" label="30516" help="">
                                     <level>0</level>
                                     <default>true</default>

@@ -225,29 +225,6 @@ def ListAtoZ():
         for name, url in characters:
             AddMenuEntry(name, 124, callb_kwargs=dict(url=url))
 
-def ListChannelAtoZ():
-    """List programmes for each channel based on alphabetical order.
-
-    Only creates the corresponding directories for each channel.
-    """
-    channel_list = [
-        ('bbcone',           'bbc_one_hd',              'BBC One'),
-        ('bbctwo',           'bbc_two_hd',              'BBC Two'),
-        ('tv/bbcthree',      'bbc_three_hd',          'BBC Three'),
-        ('bbcfour',          'bbc_four_hd',            'BBC Four'),
-        ('tv/cbbc',          'cbbc_hd',                    'CBBC'),
-        ('tv/cbeebies',      'cbeebies_hd',            'CBeebies'),
-        ('tv/bbcnews',       'bbc_news24',     'BBC News Channel'),
-        ('tv/bbcparliament', 'bbc_parliament',   'BBC Parliament'),
-        ('tv/bbcalba',       'bbc_alba',                   'Alba'),
-        ('tv/bbcscotland',   'bbc_scotland_hd',    'BBC Scotland'),
-        ('tv/s4c',           's4cpbs',                      'S4C'),
-    ]
-    for id, img, name in channel_list:
-        iconimage = 'resource://resource.images.iplayerwww/media/'+img+'.png'
-        url = "https://www.bbc.co.uk/%s/a-z" % id
-        AddMenuEntry(name, 128, iconimage, callb_kwargs=dict(page_url=url))
-
 
 def GetAtoZPage(url):
     """Allows to list programmes based on alphabetical order.
@@ -460,8 +437,8 @@ def GetFilteredCategory(url):
     ScrapeEpisodes(NEW_URL)
 
 
-def ListChannelHighlights():
-    """Creates a list directories linked to the highlights section of each channel."""
+def ListChannels():
+    """Creates a list of directories linked to the page of each channel."""
     channel_list = [
         ('bbcone',           'bbc_one_hd',              'BBC One'),
         ('bbctwo',           'bbc_two_hd',              'BBC Two'),
@@ -477,7 +454,20 @@ def ListChannelHighlights():
     ]
     for id, img, name in channel_list:
         iconimage = 'resource://resource.images.iplayerwww/media/'+img+'.png'
-        AddMenuEntry(name, 106, iconimage, callb_kwargs=dict(highlights_url=id))
+        AddMenuEntry(name, 120, iconimage, callb_kwargs=dict(chan_id=id, img_id=img))
+
+
+def GetChannelPage(chan_id, img_id):
+    """List the programmes and/or collections of a channel and start with
+    an A-Z folder.
+
+    """
+    # A to Z folder
+    iconimage = 'resource://resource.images.iplayerwww/media/' + img_id + '.png'
+    url = "https://www.bbc.co.uk/%s/a-z" % chan_id
+    AddMenuEntry('[B]A - Z[/B]', 128, iconimage, item_position='top', callb_kwargs=dict(page_url=url))
+    # Page contents
+    ScrapeEpisodes('https://www.bbc.co.uk/' + chan_id, True)
 
 
 id_regex = re.compile(r'/episodes?/(\w+)')
