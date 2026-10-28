@@ -444,6 +444,7 @@ def ListChannels():
         ('bbctwo',           'bbc_two_hd',              'BBC Two'),
         ('tv/bbcthree',      'bbc_three_hd',          'BBC Three'),
         ('bbcfour',          'bbc_four_hd',            'BBC Four'),
+        ('tv/radio1',        'bbc_radio_one',           'Radio 1'),
         ('tv/cbbc',          'cbbc_hd',                    'CBBC'),
         ('tv/cbeebies',      'cbeebies_hd',            'CBeebies'),
         ('tv/bbcnews',       'bbc_news24',     'BBC News Channel'),
