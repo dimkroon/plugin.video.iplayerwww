@@ -348,12 +348,9 @@ def parse_group_item(episode_data: dict, group_name: str):
             AddMenuEntry(mode=128, callb_kwargs={'page_url': url}, **result)
         else:
             result = ParseEpisodeWithContexMenu(episode_data)
-            programme_id = episode_data['tleo_id']
-            if programme_id and episode_data['id'] != programme_id:
-                result['context_mnu'] = [CtxMnuViewAllEpisodes(programme_id)]
             CheckAutoplay(**result)
     else:
-        xbmc.log(f"[IPWWW_VIDEO] unsupported type '{episode_data['type']}' of '{episode_data['title']}' in group '{group_name}'.")
+        xbmc.log(f"[IPWWW_VIDEO] unsupported type '{episode_data['type']}' of '{episode_data['title']}' in group '{group_name}'.", xbmc.LOGWARNING)
 
 
 def MultiPageJson(url: str, page_range: range):
@@ -508,7 +505,6 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
 
     if 'episode' in item:
         # An episode in a programme/series folder, but could also be in a 'More Like This' folder.
-        # TODO: Find a way to add context menu to items from More like this.
         CheckAutoplay(**ParseEpisode(item['episode'], is_standalone=False))
         return
     else:
@@ -710,7 +706,13 @@ def ParseJSON(programme_data, current_url):
             if 'elements' in programme_data['entities']:
                 programmes = programme_data['entities']['elements']
             if 'results' in programme_data['entities']:
+                # A programme page, a particular slice (series folder) of a programme (including 'More Like This'),
+                # or simply search results.
                 programmes = programme_data['entities']['results']
+                if 'more-like-this' in current_url:
+                    for item in programmes:
+                        CheckAutoplay(**ParseEpisodeWithContexMenu(item['episode']))
+
         elif 'relatedEpisodes' in programme_data:
             # This is an episode page treated as programme page.
             related_episodes = programme_data.get('relatedEpisodes')
@@ -721,10 +723,14 @@ def ParseJSON(programme_data, current_url):
             episodes = related_episodes.get('episodes')
             if episodes:
                 programme_id = main_episode.get('tleoId')
+                is_mlt = 'seriesId=more-like-this' in current_url
                 for item in episodes:
                     episode = item['episode']
-                    episode['tleo_id'] = programme_id
-                    CheckAutoplay(**ParseEpisode(episode, False))
+                    if is_mlt is True:
+                        CheckAutoplay(**ParseEpisodeWithContexMenu(episode))
+                    else:
+                        episode['tleo_id'] = programme_id
+                        CheckAutoplay(**ParseEpisode(episode, False))
                 return
         elif 'items' in programme_data:
             # This must be Watchlist or Continue Watching.
@@ -961,7 +967,11 @@ def ParseEpisode(episode_data: dict, is_standalone: bool = True):
             availability = availability.get('text', '')
     description = '\n\n'.join(t for t in (category, description, availability) if t)
 
-    programme_id = episode_data.get('tleo_id') or episode_data.get('tleo', {}).get('id')
+    programme_id = (
+            episode_data.get('tleo_id')
+            or episode_data.get('tleoId')
+            or episode_data.get('tleo', {}).get('id')
+            or '')
 
     return {
         'url': 'https://www.bbc.co.uk/iplayer/episode/' + episode_data['id'],
@@ -976,15 +986,23 @@ def ParseEpisode(episode_data: dict, is_standalone: bool = True):
 
 def ParseEpisodeWithContexMenu(episode_data):
     """Ensure an 'Add to Watchlist' context menu item can be created.
-    Prefefably by programme ID, but use the episode ID as an alternative.
+    Preferably by programme ID, but use the episode ID as an alternative.
 
     """
     episode = ParseEpisode(episode_data)
     pgm_id = episode['programme_id']
+    episode_id = episode_data['id']
     if not pgm_id:
-        #  Add the episode ID, so  context item can be created.
-        episode_id = episode_data['id']
+        #  Add the episode ID, so a context menu item 'Add To Watchlist' can be created.
         episode['episode_id'] = episode_id
+
+    if pgm_id:
+        if pgm_id != episode_id:
+            episode['context_mnu'] = [CtxMnuViewAllEpisodes(pgm_id)]
+    else:
+        pgm_type = episode_data.get('programme_type')
+        if pgm_type != 'one-off':
+            episode['context_mnu'] = [CtxMnuViewAllEpisodes(episode_id=episode_id)]
     return episode
 
 
@@ -1015,10 +1033,6 @@ def ParseHeroItem(episode_data):
     try:
         item = ParseEpisodeWithContexMenu(episode_data)
         item['name'] = f"[B][COLOR orange]{item['name']}[/COLOR][/B]"
-        programme_id = episode_data.get('tleo', {}).get('id')
-        if programme_id and programme_id != episode_data['id']:
-            ctx_mnu = [CtxMnuViewAllEpisodes(programme_id)]
-            item['context_mnu'] = ctx_mnu
         return item
     except Exception as err:
         xbmc.log(f"[IPWWW-VIDEO] Failed to parse hero item: {repr(err)}")
@@ -1234,9 +1248,14 @@ def ListWatching():
         CheckAutoplay(**item_data)
 
 
-def CtxMnuViewAllEpisodes(programme_id: str):
+def CtxMnuViewAllEpisodes(programme_id: str = '', episode_id: str = ''):
     """Add a context menu item 'View all episodes'."""
-    all_episodes_link = 'https://www.bbc.co.uk/iplayer/episodes/' + programme_id
+    if programme_id:
+        all_episodes_link = 'https://www.bbc.co.uk/iplayer/episodes/' + programme_id
+    elif episode_id:
+        all_episodes_link = 'https://www.bbc.co.uk/iplayer/episode/' + episode_id
+    else:
+        return
     return(translation(30600),
            f'Container.Update(plugin://plugin.video.iplayerwww/?mode=128&page_url={all_episodes_link})')
 
@@ -1319,9 +1338,6 @@ def ListRecommendations(item_id: str = '', page_url: str = 'https://www.bbc.co.u
                     item_data = ParseEpisodeWithContexMenu(episode)
                     if not item_data:
                         continue
-                    pgm_id = item_data['programme_id']
-                    if pgm_id and pgm_id != episode['id']:
-                        item_data['context_mnu'] = [CtxMnuViewAllEpisodes(pgm_id)]
                     CheckAutoplay(**item_data)
                 SetSortMethods(xbmcplugin.SORT_METHOD_DATE)
                 return
