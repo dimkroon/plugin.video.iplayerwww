@@ -61,7 +61,7 @@ try:
         Video.ListFavourites()
 
     elif mode == 109:
-        Video.ListChannelHighlights()
+        Video.ListChannels()
 
     elif mode == 112:
         Radio.ListAtoZ()
@@ -88,7 +88,7 @@ try:
         Common.SignOutBBCiD()
 
     elif mode == 120:
-        Video.ListChannelAtoZ()
+        Video.GetChannelPage(**params)
 
         # Modes 121-199 will create a sub directory menu entry
     elif mode == 121:
