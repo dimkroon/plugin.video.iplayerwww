@@ -1566,14 +1566,15 @@ def ScrapeAvailableStreams(url):
 
 def ScrapeJSON(html):
     json_data = None
-    format = 1
-    match = re.search(r'window\.mediatorDefer\=page\(document\.getElementById\(\"tviplayer\"\),(.*?)\);', html, re.DOTALL)
-    if not match:
-        format = 2
-        match = re.search(r'window.__IPLAYER_REDUX_STATE__ = (.*?);\s*</script>', html, re.DOTALL)
+    format = 2
+    match = re.search(r'window.__IPLAYER_REDUX_STATE__ = (.*?);\s*</script>', html, re.DOTALL)
     if not match:
         format = 3
         match = re.search(r'window.__INITIAL_DATA__\s*=\s*(.*?);\s*</script>', html, re.DOTALL)
+    if not match:
+        format = 1
+        match = re.search(r'window\.mediatorDefer=page\(document\.getElementById\(\"tviplayer\"\),(.*?)\);',
+                          html, re.DOTALL)
     if match:
         data = match.group(1)
         json_data = json.loads(data)
