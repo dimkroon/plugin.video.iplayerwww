@@ -522,7 +522,7 @@ def duration_2_secs(duration: str) -> int | None:
         return None
 
 
-def iso_duration_2_seconds(iso_str: str) -> int:
+def iso_duration_2_seconds(iso_str: str) -> int | None:
     """Convert an ISO 8601 duration string into seconds.
 
     Simple parser to match durations found in films and tv episodes.
