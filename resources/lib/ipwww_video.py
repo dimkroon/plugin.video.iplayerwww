@@ -14,7 +14,7 @@ from urllib.parse import parse_qsl
 
 from resources.lib.ipwww_common import (
     translation, AddMenuEntry, OpenURL, OpenRequest, CheckLogin, CreateBaseDirectory,
-    GetCookieJar, ParseImageUrl, download_subtitles, GeoBlockedError, WebRequestError,
+    download_subtitles, GeoBlockedError, WebRequestError, ADDON,
     duration_2_secs, PostJson, strptime, addonid, DeleteUrl, ProgressDlg, utf8_quote_plus)
 from resources.lib import ipwww_progress
 
@@ -22,19 +22,12 @@ import xbmc
 import xbmcvfs
 import xbmcgui
 import xbmcplugin
-import xbmcaddon
-from random import randint
-
-ADDON = xbmcaddon.Addon(id='plugin.video.iplayerwww')
 
 # pre-translate text because it's used very often.
 TXT_VIEW_ALL_EPISODES = translation(30600)
 
 
-def tp(path):
-    return xbmcvfs.translatePath(path)
-
-
+tp = xbmcvfs.translatePath
 
 
 
@@ -525,7 +518,7 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
         # Folder from programmes A-Z
         if not main_url in added_directories:
             title = '[B]'+item['title']+'[/B] - '+num_episodes+' episodes available'
-            AddMenuEntry(title, 139, icon, synopsis, programme_id=programme_id, episode_id=episode_id,
+            AddMenuEntry(title, 128, icon, synopsis, programme_id=programme_id, episode_id=episode_id,
                          callb_kwargs=dict(page_url=main_url))
             added_directories.append(main_url)
 
@@ -1144,9 +1137,9 @@ def ListWatching():
         programme = watching_item['programme']
         item_data = ParseEpisode(episode)
 
-        # Lacking a field synopses, a watching item's description is empty. Since the
+        # Lacking a field 'synopses', a watching item's description is empty. Since the
         # remaining playtime is presented in the title instead of the usual episode name,
-        # place the original title/sub-title in the description.
+        # place the original title/subtitle in the description.
         item_data['description'] = item_data['name']
         remaining_seconds = watching_item.get('remaining')
         if remaining_seconds:
@@ -1287,7 +1280,7 @@ def PlayStream(url, subtitles_url='', episode_id=None, stream_id=None, replay_ch
     liz.setProperty("IsPlayable", "true")
     liz.setProperty('inputstream', 'inputstream.adaptive')
     liz.setProperty('inputstream.adaptive.manifest_type', 'mpd')
-    xbmc.log(f'[iPLayer www.video.PlayStream] url={url}, episodeid = {episode_id}, stream_id = {stream_id}')
+    xbmc.log(f'[iPlayer www.video.PlayStream] url={url}, episodeid = {episode_id}, stream_id = {stream_id}')
     # FIXME: find a more reliable way to distinguish live from VOD
     is_live = '-cmaf' in url or '-uhd' in url
     if is_live:
@@ -1427,7 +1420,7 @@ def ParseMediaselector(stream_id):
         elif 'result' in json_data:
             # MediaSelector will probably already have returned HTTP status 403, but keep this check just to be sure.
             if json_data['result'] == 'geolocation':
-                raise GeoBlockedError()
+                raise GeoBlockedError(NEW_URL)
     # print("Found streams:")
     # print(streams)
     # print(subtitles)
