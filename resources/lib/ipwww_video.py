@@ -32,6 +32,8 @@ def tp(path):
     return xbmcvfs.translatePath(path)
 
 
+# pre-translate text because it's used very often.
+TXT_VIEW_ALL_EPISODES = translation(30600)
 
 
 
@@ -1177,8 +1179,8 @@ def CtxMnuViewAllEpisodes(programme_id: str = '', episode_id: str = ''):
     elif episode_id:
         all_episodes_link = 'https://www.bbc.co.uk/iplayer/episode/' + episode_id
     else:
-        return
-    return(translation(30600),
+        return None
+    return(TXT_VIEW_ALL_EPISODES,
            f'Container.Update(plugin://plugin.video.iplayerwww/?mode=128&page_url={all_episodes_link})')
 
 
