@@ -1567,23 +1567,15 @@ def ScrapeAvailableStreams(url):
 
 def ScrapeJSON(html):
     json_data = None
-    format = 1
-    match = re.search(r'window\.mediatorDefer\=page\(document\.getElementById\(\"tviplayer\"\),(.*?)\);', html, re.DOTALL)
-    if not match:
-        format = 2
-        match = re.search(r'window.__IPLAYER_REDUX_STATE__ = (.*?);\s*</script>', html, re.DOTALL)
+    format = 2
+    match = re.search(r'window.__IPLAYER_REDUX_STATE__ = (.*?);\s*</script>', html, re.DOTALL)
     if not match:
         format = 3
         match = re.search(r'window.__INITIAL_DATA__\s*=\s*(.*?);\s*</script>', html, re.DOTALL)
     if match:
         data = match.group(1)
         json_data = json.loads(data)
-        if format == 1:
-            if 'appStoreState' in json_data:
-                json_data = json_data.get('appStoreState')
-            elif 'initialState' in json_data:
-                json_data = json_data.get('initialState')
-        elif format == 3:
+        if format == 3:
             json_data = json.loads(json_data)
         # print json.dumps(json_data, indent=2, sort_keys=True)
     return json_data
@@ -1621,10 +1613,10 @@ def GetSchedules(channel_list):
     regional news. This function renames this titel of BBC One London to a more
     generic "BBC News where you are". This way the schedules of BBC One London can be
     used for all regional BBC One channels, which will greatly reduce the number of
-    HTTP request.
+    HTTP requests.
 
     Schedules for each channel is a tuple with two elements. The first is the title of the
-    programme that is now on, the second is single multi-line string, with the
+    programme that is now on, the second is a single multi-line string, with the
     time and name of each programme on a separate line. These strings are intended
     to be used in the info fields of the ListItems of live channels.
 
