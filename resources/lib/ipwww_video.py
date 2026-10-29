@@ -231,7 +231,7 @@ def GetGroup(url):
 def parse_group_item(episode_data: dict, group_name: str):
     """Parse an item from a group.
 
-    All group content apears to be of type 'episode'. Some descriptions, however,
+    All group content appears to be of type 'episode'. Some descriptions, however,
     obviously refer to the whole programme, rather than just one episode, while others
     definitely describe a particular episode. In groups like those from a category page,
     one would expect an item to be listed as a programme folder, but other groups may
