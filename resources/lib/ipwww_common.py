@@ -28,6 +28,7 @@ except:
     import http.cookiejar
     cookielib = http.cookiejar
 
+
 ADDON = xbmcaddon.Addon(id='plugin.video.iplayerwww')
 # Pre-translate text because it's used very often.
 TXT_ADD_TO_WATCHLIST = ADDON.getLocalizedString(30606)
@@ -88,7 +89,7 @@ if(not os.path.exists(DIR_USERDATA)):
 
 
 def translation(id):
-    return xbmcaddon.Addon(addonid).getLocalizedString(id)
+    return ADDON.getLocalizedString(id)
 
 
 re_subtitles = re.compile('^\s*<p.*?begin=\"(.*?)(\.([0-9]+))?\"\s+.*?end=\"(.*?)(\.([0-9]+))?\"\s*>(.*?)</p>')

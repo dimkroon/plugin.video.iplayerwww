@@ -134,9 +134,6 @@ try:
     elif mode == 138:
         Radio.GetAtoZPage(**params)
 
-    elif mode == 139:
-        Video.ScrapeEpisodes(**params)
-
     elif mode == 190:
         from resources.lib.ipwww_search import new_search
         new_search(**params)

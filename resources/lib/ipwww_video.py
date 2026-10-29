@@ -14,7 +14,7 @@ from urllib.parse import parse_qsl
 
 from resources.lib.ipwww_common import (
     translation, AddMenuEntry, OpenURL, OpenRequest, CheckLogin, CreateBaseDirectory,
-    GetCookieJar, ParseImageUrl, download_subtitles, GeoBlockedError, WebRequestError,
+    download_subtitles, GeoBlockedError, WebRequestError, ADDON,
     duration_2_secs, PostJson, strptime, addonid, DeleteUrl, ProgressDlg, utf8_quote_plus)
 from resources.lib import ipwww_progress
 
@@ -22,19 +22,12 @@ import xbmc
 import xbmcvfs
 import xbmcgui
 import xbmcplugin
-import xbmcaddon
-from random import randint
-
-ADDON = xbmcaddon.Addon(id='plugin.video.iplayerwww')
 
 
-def tp(path):
-    return xbmcvfs.translatePath(path)
-
+tp = xbmcvfs.translatePath
 
 # pre-translate text because it's used very often.
 TXT_VIEW_ALL_EPISODES = translation(30600)
-
 
 
 def ListUHDTrial():
@@ -524,7 +517,7 @@ def ParseSingleJSON(meta, item, name, added_playables, added_directories):
         # Folder from programmes A-Z
         if not main_url in added_directories:
             title = '[B]'+item['title']+'[/B] - '+num_episodes+' episodes available'
-            AddMenuEntry(title, 139, icon, synopsis, programme_id=programme_id, episode_id=episode_id,
+            AddMenuEntry(title, 128, icon, synopsis, programme_id=programme_id, episode_id=episode_id,
                          callb_kwargs=dict(page_url=main_url))
             added_directories.append(main_url)
 
