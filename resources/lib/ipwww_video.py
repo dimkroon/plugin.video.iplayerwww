@@ -1572,6 +1572,10 @@ def ScrapeJSON(html):
     if not match:
         format = 3
         match = re.search(r'window.__INITIAL_DATA__\s*=\s*(.*?);\s*</script>', html, re.DOTALL)
+    if not match:
+        format = 1
+        match = re.search(r'window\.mediatorDefer=page\(document\.getElementById\(\"tviplayer\"\),(.*?)\);',
+                          html, re.DOTALL)
     if match:
         data = match.group(1)
         json_data = json.loads(data)
