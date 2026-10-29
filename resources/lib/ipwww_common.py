@@ -29,6 +29,8 @@ except:
     cookielib = http.cookiejar
 
 ADDON = xbmcaddon.Addon(id='plugin.video.iplayerwww')
+# Pre-translate text because it's used very often.
+TXT_ADD_TO_WATCHLIST = ADDON.getLocalizedString(30606)
 
 
 class IpwwwError(Exception):
@@ -611,10 +613,10 @@ def AddMenuEntry(name, mode, iconimage=None, description='', aired=None, resume_
     if context_mnu is None:
         context_mnu = []
     if programme_id:
-        context_mnu.append((translation(30606),
+        context_mnu.append((TXT_ADD_TO_WATCHLIST,
                             f'RunPlugin(plugin://plugin.video.iplayerwww?mode=303&programme_id={programme_id})'))
     elif episode_id:
-        context_mnu.append((translation(30606),
+        context_mnu.append((TXT_ADD_TO_WATCHLIST,
                             f'RunPlugin(plugin://plugin.video.iplayerwww?mode=303&episode_id={episode_id})'))
 
     if context_mnu:

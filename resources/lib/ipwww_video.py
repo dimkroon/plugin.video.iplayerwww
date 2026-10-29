@@ -405,12 +405,9 @@ def GetChannelPage(chan_id, img_id):
     ScrapeEpisodes('https://www.bbc.co.uk/' + chan_id, True)
 
 
-id_regex = re.compile(r'/episodes?/(\w+)')
-
-
 def id_from_url(url):
     if url:
-        match = id_regex.search(url)
+        match = re.search(r'/episodes?/(\w+)', url)
         if match:
             return match[1]
     return ''
