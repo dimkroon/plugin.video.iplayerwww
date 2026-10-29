@@ -574,7 +574,7 @@ def AddMenuEntry(name, mode, iconimage=None, description='', aired=None, resume_
         date_string = ""
 
     # Modes 201-299 will create a new playable line, otherwise create a new directory line.
-    if mode in (201, 202, 203, 204, 205, 211, 212, 213, 214):
+    if mode in (201, 202, 203, 205, 211, 212, 213, 214):
         isFolder = False
     # Modes 119 (sign out) and 190 (new search) are not folders, but are also not playable.
     elif mode in (119, 190):
@@ -595,7 +595,7 @@ def AddMenuEntry(name, mode, iconimage=None, description='', aired=None, resume_
             "date": date_string,
             "aired": aired})
 
-    if mode in (201, 202, 203, 204, 205, 211, 212, 213):
+    if mode in (201, 202, 203, 205, 211, 212, 213):
         # Playable items
         info["mediatype"] = "episode"
 
@@ -695,8 +695,6 @@ def CreateBaseDirectory(content_type=None):
                          callb_kwargs=dict(content_type='video'))
         if ADDON.getSetting("menu_video_live") == 'true':
             AddMenuEntry(translation(30305), 101, icondir+'tv.png')
-        # if ADDON.getSetting("menu_video_red_button") == 'true':
-        #     AddMenuEntry(translation(30328), 'url', 118, icondir+'tv.png', '', '')
         if ADDON.getSetting("menu_video_uhd_trial") == 'true':
             AddMenuEntry(translation(30335), 197, icondir+'tv.png')
         if ADDON.getSetting("menu_video_watching") == 'true':
@@ -747,9 +745,6 @@ def CreateBaseDirectory(content_type=None):
         if ADDON.getSetting("menu_video_live") == 'true':
             AddMenuEntry((translation(30323)+translation(30305)), 101,
                          icondir+'tv.png')
-        # if ADDON.getSetting("menu_video_red_button") == 'true':
-        #     AddMenuEntry((translation(30323)+translation(30328)), 'url', 118,
-        #                  icondir+'tv.png', '', '')
         if ADDON.getSetting("menu_video_uhd_trial") == 'true':
             AddMenuEntry((translation(30323)+translation(30335)), 197,
                          icondir+'tv.png')

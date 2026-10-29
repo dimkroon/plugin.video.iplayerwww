@@ -32,73 +32,7 @@ def tp(path):
     return xbmcvfs.translatePath(path)
 
 
-def RedButtonDialog():
-    if ADDON.getSetting('redbutton_warning') == 'true':
-        dialog = xbmcgui.Dialog()
-        ret = dialog.yesno(translation(30405), translation(30406) + "\n" + translation(30407),
-                           translation(30409), translation(30408))
-        if ret:
-            ListRedButton()
-    else:
-        ListRedButton()
 
-
-def ListRedButton():
-    channel_list = [
-        ('sport_stream_01',  'BBC Red Button 1'),
-        ('sport_stream_02',  'BBC Red Button 2'),
-        ('sport_stream_03',  'BBC Red Button 3'),
-        ('sport_stream_04',  'BBC Red Button 4'),
-        ('sport_stream_05',  'BBC Red Button 5'),
-        ('sport_stream_06',  'BBC Red Button 6'),
-        ('sport_stream_07',  'BBC Red Button 7'),
-        ('sport_stream_08',  'BBC Red Button 8'),
-        ('sport_stream_09',  'BBC Red Button 9'),
-        ('sport_stream_10',  'BBC Red Button 10'),
-        ('sport_stream_11',  'BBC Red Button 11'),
-        ('sport_stream_12',  'BBC Red Button 12'),
-        ('sport_stream_13',  'BBC Red Button 13'),
-        ('sport_stream_14',  'BBC Red Button 14'),
-        ('sport_stream_15',  'BBC Red Button 15'),
-        ('sport_stream_16',  'BBC Red Button 16'),
-        ('sport_stream_17',  'BBC Red Button 17'),
-        ('sport_stream_18',  'BBC Red Button 18'),
-        ('sport_stream_19',  'BBC Red Button 19'),
-        ('sport_stream_20',  'BBC Red Button 20'),
-        ('sport_stream_21',  'BBC Red Button 21'),
-        ('sport_stream_22',  'BBC Red Button 22'),
-        ('sport_stream_23',  'BBC Red Button 23'),
-        ('sport_stream_24',  'BBC Red Button 24'),
-        ('sport_stream_01b', 'BBC Red Button 1b'),
-        ('sport_stream_02b', 'BBC Red Button 2b'),
-        ('sport_stream_03b', 'BBC Red Button 3b'),
-        ('sport_stream_04b', 'BBC Red Button 4b'),
-        ('sport_stream_05b', 'BBC Red Button 5b'),
-        ('sport_stream_06b', 'BBC Red Button 6b'),
-        ('sport_stream_07b', 'BBC Red Button 7b'),
-        ('sport_stream_08b', 'BBC Red Button 8b'),
-        ('sport_stream_09b', 'BBC Red Button 9b'),
-        ('sport_stream_10b', 'BBC Red Button 10b'),
-        ('sport_stream_11b', 'BBC Red Button 11b'),
-        ('sport_stream_12b', 'BBC Red Button 12b'),
-        ('sport_stream_13b', 'BBC Red Button 13b'),
-        ('sport_stream_14b', 'BBC Red Button 14b'),
-        ('sport_stream_15b', 'BBC Red Button 15b'),
-        ('sport_stream_16b', 'BBC Red Button 16b'),
-        ('sport_stream_17b', 'BBC Red Button 17b'),
-        ('sport_stream_18b', 'BBC Red Button 18b'),
-        ('sport_stream_19b', 'BBC Red Button 19b'),
-        ('sport_stream_20b', 'BBC Red Button 20b'),
-        ('sport_stream_21b', 'BBC Red Button 21b'),
-        ('sport_stream_22b', 'BBC Red Button 22b'),
-        ('sport_stream_23b', 'BBC Red Button 23b'),
-        ('sport_stream_24b', 'BBC Red Button 24b'),
-    ]
-    iconimage = tp('special://home/addons/plugin.video.iplayerwww/media/red_button.png')
-    for id, name in channel_list:
-        mode = 203 if ADDON.getSetting('streams_autoplay') == 'true' else 123
-        AddMenuEntry(name, mode, iconimage,
-                     callb_kwargs=dict(name=name, channelname=id, iconimage=iconimage))
 
 
 def ListUHDTrial():

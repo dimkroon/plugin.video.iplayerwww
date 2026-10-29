@@ -100,10 +100,6 @@ msgctxt "#30182"
 msgid "Enter new password (empty to unlock):"
 msgstr "Voer nieuwe wachtwoord in. (of leeg om te wissen)"
 
-msgctxt "#30190"
-msgid "Show Red Button warning"
-msgstr "Toon 'RedButton' waarschuwing"
-
 msgctxt "#30200"
 msgid "Streams"
 msgstr ""
@@ -304,10 +300,6 @@ msgctxt "#30327"
 msgid "Channel A-Z"
 msgstr "Kanaal A-Z"
 
-msgctxt "#30328"
-msgid "Red Button"
-msgstr ""
-
 msgctxt "#30329"
 msgid "CBeebies Live"
 msgstr ""
@@ -363,14 +355,6 @@ msgstr "Can de stream niet vinden."
 msgctxt "#30405"
 msgid "Warning"
 msgstr "Waarschuwing"
-
-msgctxt "#30406"
-msgid "Red Button channels may be unavailable depending on their schedule."
-msgstr ""
-
-msgctxt "#30407"
-msgid "Usage of Red Button is at your own risk."
-msgstr ""
 
 msgctxt "#30408"
 msgid "Agree"
@@ -455,10 +439,6 @@ msgstr "iPLayer: Zoeken"
 msgctxt "#30518"
 msgid "iPlayer: Watch Live"
 msgstr "iPLayer: Live TV"
-
-msgctxt "#30519"
-msgid "iPlayer: Red Button"
-msgstr ""
 
 msgctxt "#30520"
 msgid "iPlayer: Continue Watching"

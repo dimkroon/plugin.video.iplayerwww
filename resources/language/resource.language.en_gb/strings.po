@@ -112,10 +112,6 @@ msgctxt "#30182"
 msgid "Enter new password (empty to unlock):"
 msgstr ""
 
-msgctxt "#30190"
-msgid "Show Red Button warning"
-msgstr ""
-
 msgctxt "#30191"
 msgid "Select live channels"
 msgstr ""
@@ -348,10 +344,6 @@ msgctxt "#30326"
 msgid "BBCiD Sign Out"
 msgstr ""
 
-msgctxt "#30328"
-msgid "Red Button"
-msgstr ""
-
 msgctxt "#30329"
 msgid "CBeebies Live"
 msgstr ""
@@ -406,14 +398,6 @@ msgstr ""
 
 msgctxt "#30405"
 msgid "Warning"
-msgstr ""
-
-msgctxt "#30406"
-msgid "Red Button channels may be unavailable depending on their schedule."
-msgstr ""
-
-msgctxt "#30407"
-msgid "Usage of Red Button is at your own risk."
 msgstr ""
 
 msgctxt "#30408"
@@ -494,10 +478,6 @@ msgstr ""
 
 msgctxt "#30518"
 msgid "iPlayer: Watch Live"
-msgstr ""
-
-msgctxt "#30519"
-msgid "iPlayer: Red Button"
 msgstr ""
 
 msgctxt "#30520"
