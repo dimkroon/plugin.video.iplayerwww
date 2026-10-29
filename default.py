@@ -81,9 +81,6 @@ try:
     elif mode == 199:
         Radio.ListFollowing()
 
-    elif mode == 118:
-        Video.RedButtonDialog()
-
     elif mode == 119:
         Common.SignOutBBCiD()
 
@@ -114,9 +111,6 @@ try:
 
     elif mode == 128:
         Video.ScrapeEpisodes(**params)
-
-    elif mode == 129:
-        Video.AddAvailableRedButtonDirectory(**params)
 
     elif mode == 130:
         from resources.lib.ipwww_search import do_search
@@ -156,9 +150,6 @@ try:
 
     elif mode == 203:
         Video.AddAvailableLiveStreamItemSelector(**params)
-
-    elif mode == 204:
-        Video.AddAvailableRedButtonItem(**params)
 
     elif mode == 205:
         Video.AddAvailableUHDTrialItem(**params)
