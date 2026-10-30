@@ -32,13 +32,13 @@ def run():
 
         # Modes 101-119 will create a main directory menu entry
         elif mode == 101:
-            Video.ListLive(**params)
+            Video.ListLive()
 
         elif mode == 102:
-            Video.ListAtoZ(**params)
+            Video.ListAtoZ()
 
         elif mode == 103:
-            Video.ListCategories(**params)
+            Video.ListCategories()
 
         elif mode == 104:
             from resources.lib.ipwww_search import list_search_terms

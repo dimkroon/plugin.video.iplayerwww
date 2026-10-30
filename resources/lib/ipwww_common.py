@@ -92,9 +92,6 @@ def translation(id):
     return ADDON.getLocalizedString(id)
 
 
-re_subtitles = re.compile('^\s*<p.*?begin=\"(.*?)(\.([0-9]+))?\"\s+.*?end=\"(.*?)(\.([0-9]+))?\"\s*>(.*?)</p>')
-
-
 def ParseImageUrl(url):
     return url.replace("{recipe}", "832x468")
 
@@ -115,154 +112,148 @@ def download_subtitles(url):
     # <p begin="0:01:12.400" end="0:01:13.880">Thinking.</p>
     outfile = os.path.join(DIR_USERDATA, 'iplayer.srt')
     # print("Downloading subtitles from %s to %s",url, outfile)
-    fw = codecs.open(outfile, 'w', encoding='utf-8')
+    with open(outfile, 'w', encoding='utf-8') as fw:
+        if not url:
+            fw.write("1\n0:00:00,001 --> 0:01:00,001\nNo subtitles available\n\n")
+            return
 
-    if not url:
-        fw.write("1\n0:00:00,001 --> 0:01:00,001\nNo subtitles available\n\n")
-        fw.close()
-        return
+        txt = OpenURL(url)
+        # print(txt)
 
-    txt = OpenURL(url)
-    # print(txt)
-
-    # get styles
-    styles = []
-    match = re.search(r'<styling>(.+?)</styling>', txt, re.DOTALL)
-    if match:
-        match = re.findall(r'<style(.*?)>', match.group(1), re.DOTALL)
+        # get styles
+        styles = []
+        match = re.search(r'<styling>(.+?)</styling>', txt, re.DOTALL)
         if match:
-            for style_line in match:
-                match = re.search(r'id="(.*?)"', style_line, re.DOTALL)
-                id = None
-                if match:
-                    id = match.group(1)
-                color = None
-                match = re.search(r'color="(.*?)"', style_line, re.DOTALL)
-                if match:
-                    # Some of the subtitle files use #ffffff color coding, others use plain text.
-                    if match.group(1).startswith('#'):
-                        styles.append((id, match.group(1)[0:7]))
-                    else:
-                        if (match.group(1)=='white'):
-                            styles.append((id, '#ffffff'))
-                        elif (match.group(1)=='yellow'):
-                            styles.append((id, '#ffff00'))
-                        elif (match.group(1)=='cyan'):
-                            styles.append((id, '#00ffff'))
-                        elif (match.group(1)=='lime'):
-                            styles.append((id, '#00ff00'))
+            match = re.findall(r'<style(.*?)>', match.group(1), re.DOTALL)
+            if match:
+                for style_line in match:
+                    match = re.search(r'id="(.*?)"', style_line, re.DOTALL)
+                    id = None
+                    if match:
+                        id = match.group(1)
+
+                    match = re.search(r'color="(.*?)"', style_line, re.DOTALL)
+                    if match:
+                        # Some of the subtitle files use #ffffff color coding, others use plain text.
+                        if match.group(1).startswith('#'):
+                            styles.append((id, match.group(1)[0:7]))
                         else:
-                            styles.append((id, match.group(1)))
-    else:
-        # In case no styles are found, we at least need to define the default (white).
-        styles = [('0', '#ffffff')]
-    # print("Retrieved styles")
-    # print(styles)
+                            if (match.group(1)=='white'):
+                                styles.append((id, '#ffffff'))
+                            elif (match.group(1)=='yellow'):
+                                styles.append((id, '#ffff00'))
+                            elif (match.group(1)=='cyan'):
+                                styles.append((id, '#00ffff'))
+                            elif (match.group(1)=='lime'):
+                                styles.append((id, '#00ff00'))
+                            else:
+                                styles.append((id, match.group(1)))
+        else:
+            # In case no styles are found, we at least need to define the default (white).
+            styles = [('0', '#ffffff')]
+        # print("Retrieved styles")
+        # print(styles)
 
-    # get body
-    body = []
-    body = re.search(r'<body.*?>(.+?)</body>', txt, re.DOTALL)
-    if body:
-        # print("Located body")
-        # print(body.group(1).encode('utf-8'))
-        frames = re.findall(r'<p(.*?)>(.*?)</p>', body.group(1), re.DOTALL)
-        # frames = re.findall(r'<p.*?begin=\"(.*?)".*?end=\"(.*?)".*?style="(.*?)".*?>(.*?)</p>', body.group(1), re.DOTALL)
-        if frames:
-            index = 1
-            # print("Found %s frames"%len(frames))
-            # print(frames)
-            p = re.compile(r'<span(.*?)>(.*?)</span>')
-            old_split = 999
-            old_mil = 999
-            for formatting, content in frames:
-                start = ''
-                match = re.search(r'begin=\"(.*?)"', formatting, re.DOTALL)
-                if match:
-                    start = match.group(1)
-                end = ''
-                match = re.search(r'end=\"(.*?)"', formatting, re.DOTALL)
-                if match:
-                    end = match.group(1)
-                style = None
-                match = re.search(r'style=\"(.*?)"', formatting, re.DOTALL)
-                if match:
-                    style = match.group(1)
-                else:
-                    # If no style is found, we assume that first style should be applied.
-                    style = styles[0][0]
-                # print("Style is "+style)
-                start_split = re.split('\.',start)
-                # print start_split
-                if(len(start_split)>1):
-                    start_mil_f = start_split[1].ljust(3, '0')
-                else:
-                    start_mil_f = "000"
-                end_split = re.split('\.',end)
-                if(len(end_split)>1):
-                    end_mil_f = end_split[1].ljust(3, '0')
-                else:
-                    end_mil_f = "000"
+        # get body
+        body = re.search(r'<body.*?>(.+?)</body>', txt, re.DOTALL)
+        if body:
+            # print("Located body")
+            # print(body.group(1).encode('utf-8'))
+            frames = re.findall(r'<p(.*?)>(.*?)</p>', body.group(1), re.DOTALL)
+            # frames = re.findall(r'<p.*?begin=\"(.*?)".*?end=\"(.*?)".*?style="(.*?)".*?>(.*?)</p>', body.group(1), re.DOTALL)
+            if frames:
+                index = 1
+                # print("Found %s frames"%len(frames))
+                # print(frames)
+                p = re.compile(r'<span(.*?)>(.*?)</span>')
+                old_split = 999
+                old_mil = 999
+                for formatting, content in frames:
+                    start = ''
+                    match = re.search(r'begin=\"(.*?)"', formatting, re.DOTALL)
+                    if match:
+                        start = match.group(1)
+                    end = ''
+                    match = re.search(r'end=\"(.*?)"', formatting, re.DOTALL)
+                    if match:
+                        end = match.group(1)
 
-                spans = []
-                text = ''
-                default_color = [value for (style_id, value) in styles if style == style_id]
-                spans = re.search(r'<span', content, re.DOTALL)
-                if (spans):
-                    cflag = False
-                    default_color = [value for (style_id, value) in styles if style == style_id]
-                    if default_color:
-                        color = default_color[0]
+                    match = re.search(r'style=\"(.*?)"', formatting, re.DOTALL)
+                    if match:
+                        style = match.group(1)
                     else:
-                        # Sometimes the style does not have any color information, use the color information of the first style instead.
-                        default_color = [styles[0][1]]
-                        color = default_color[0]
-                    content_split=p.split(content)
-                    for part in content_split:
-                        if part:
-                            match = re.search(r'color="(.*?)"', part, re.DOTALL)
-                            match2 = re.search(r'style="(.*?)"', part, re.DOTALL)
-                            if match:
-                                # New style ttml: style is set per display (or not at all), and within each
-                                # display, there may be several substyles defined by <span tts:color=
-                                if (match.group(1)=='white'):
-                                    color = '#ffffff'
-                                elif (match.group(1)=='yellow'):
-                                    color = '#ffff00'
-                                elif (match.group(1)=='cyan'):
-                                    color = '#00ffff'
-                                elif (match.group(1)=='lime'):
-                                    color = '#00ff00'
-                                else:
-                                    color = match.group(1)
-                                cflag = True
-                                continue
-                            elif match2:
-                                # Old style ttml: Everything is encapsulated in <span style= statements
-                                color = [value for (style_id, value) in styles if match2.group(1) == style_id][0]
-                                cflag = True
-                                continue
-                            elif (cflag==False):
-                                color = default_color[0]
-                            text=text+'<font color="'+color+'">'+part+'</font>'
-                            cflag = False
-                else:
-                    text=text+'<font color="'+default_color[0]+'">'+content+'</font>'
+                        # If no style is found, we assume that first style should be applied.
+                        style = styles[0][0]
+                    # print("Style is "+style)
+                    start_split = re.split(r'\.',start)
+                    # print start_split
+                    if(len(start_split)>1):
+                        start_mil_f = start_split[1].ljust(3, '0')
+                    else:
+                        start_mil_f = "000"
+                    end_split = re.split(r'\.',end)
+                    if(len(end_split)>1):
+                        end_mil_f = end_split[1].ljust(3, '0')
+                    else:
+                        end_mil_f = "000"
 
-                # Get correct line breaks according to SRT
-                text = re.sub(r'<br\s?/>', '\n', text)
-                if (old_split == start_split[0] and old_mil == start_mil_f):
-                    entry = "%s\n" % (text)
-                else:
-                    entry = "\n%d\n%s,%s --> %s,%s\n%s\n" % (index, start_split[0], start_mil_f, end_split[0], end_mil_f, text)
-                old_split = start_split[0]
-                old_mil = start_mil_f
-                if entry:
-                    # Remove empty line breaks
-                    final = re.sub(r'\n\s*\n', '\n', entry)
-                    fw.write(final)
-                    index += 1
+                    text = ''
+                    default_color = [value for (style_id, value) in styles if style == style_id]
+                    spans = re.search(r'<span', content, re.DOTALL)
+                    if spans:
+                        cflag = False
+                        default_color = [value for (style_id, value) in styles if style == style_id]
+                        if default_color:
+                            color = default_color[0]
+                        else:
+                            # Sometimes the style does not have any color information, use the color information of the first style instead.
+                            default_color = [styles[0][1]]
+                            color = default_color[0]
+                        content_split=p.split(content)
+                        for part in content_split:
+                            if part:
+                                match = re.search(r'color="(.*?)"', part, re.DOTALL)
+                                match2 = re.search(r'style="(.*?)"', part, re.DOTALL)
+                                if match:
+                                    # New style ttml: style is set per display (or not at all), and within each
+                                    # display, there may be several substyles defined by <span tts:color=
+                                    if (match.group(1)=='white'):
+                                        color = '#ffffff'
+                                    elif (match.group(1)=='yellow'):
+                                        color = '#ffff00'
+                                    elif (match.group(1)=='cyan'):
+                                        color = '#00ffff'
+                                    elif (match.group(1)=='lime'):
+                                        color = '#00ff00'
+                                    else:
+                                        color = match.group(1)
+                                    cflag = True
+                                    continue
+                                elif match2:
+                                    # Old style ttml: Everything is encapsulated in <span style= statements
+                                    color = [value for (style_id, value) in styles if match2.group(1) == style_id][0]
+                                    cflag = True
+                                    continue
+                                elif cflag == False:
+                                    color = default_color[0]
+                                text=text+'<font color="'+color+'">'+part+'</font>'
+                                cflag = False
+                    else:
+                        text=text+'<font color="'+default_color[0]+'">'+content+'</font>'
 
-    fw.close()
+                    # Get correct line breaks according to SRT
+                    text = re.sub(r'<br\s?/>', '\n', text)
+                    if (old_split == start_split[0] and old_mil == start_mil_f):
+                        entry = "%s\n" % (text)
+                    else:
+                        entry = "\n%d\n%s,%s --> %s,%s\n%s\n" % (index, start_split[0], start_mil_f, end_split[0], end_mil_f, text)
+                    old_split = start_split[0]
+                    old_mil = start_mil_f
+                    if entry:
+                        # Remove empty line breaks
+                        final = re.sub(r'\n\s*\n', '\n', entry)
+                        fw.write(final)
+                        index += 1
     return outfile
 
 
