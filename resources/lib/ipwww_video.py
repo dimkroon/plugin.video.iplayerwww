@@ -685,7 +685,7 @@ def ParseJSON(programme_data, current_url):
                         url = pgm_dta.pop('url')
                         yield CreateMenuEntry(mode=128, **pgm_dta, callb_kwargs=dict(page_url=url))
                 else:
-                    ParseSingleJSON(meta, item, name, added_playables, added_directories)
+                    yield from ParseSingleJSON(meta, item, name, added_playables, added_directories)
 
         # The next section is for global and channel highlights. They are a bit tricky.
         groups = None
@@ -986,7 +986,7 @@ def ListHighlights(highlights_url):
 
     json_data = ScrapeJSON(html)
     if json_data:
-        ParseJSON(json_data, current_url)
+        yield from ParseJSON(json_data, current_url)
 
 
 def ListMostPopular():
@@ -996,7 +996,7 @@ def ListMostPopular():
 
     json_data = ScrapeJSON(html)
     if json_data:
-        ParseJSON(json_data, current_url)
+        yield from ParseJSON(json_data, current_url)
 
 
 def AddAvailableStreamItem(url):
@@ -1042,15 +1042,15 @@ def GetAvailableStreams(name, url, iconimage, description, resume_time='', total
     # If we found standard streams, append them to the list.
     if stream_ids['stream_id_st']:
         yield from AddAvailableStreamsDirectory(name, stream_ids['stream_id_st'], iconimage, description,
-                                     stream_ids['episode_id'], resume_time, total_time)
+                                                stream_ids['episode_id'], resume_time, total_time)
     # If we searched for Audio Described programmes and they have been found, append them to the list.
     if stream_ids['stream_id_ad'] or not stream_ids['stream_id_st']:
         yield from AddAvailableStreamsDirectory(name + ' - (Audio Described)', stream_ids['stream_id_ad'], iconimage,
-                                     description, stream_ids['episode_id'], resume_time, total_time)
+                                                description, stream_ids['episode_id'], resume_time, total_time)
     # If we search for Signed programmes and they have been found, append them to the list.
     if stream_ids['stream_id_sl'] or not stream_ids['stream_id_st']:
         yield from AddAvailableStreamsDirectory(name + ' - (Signed)', stream_ids['stream_id_sl'], iconimage,
-                                     description, stream_ids['episode_id'], resume_time, total_time)
+                                                description, stream_ids['episode_id'], resume_time, total_time)
 
 
 def Search(search_entered):
@@ -1273,8 +1273,8 @@ def ListRecommendations(item_id: str = '', page_url: str = 'https://www.bbc.co.u
             bundle_id = bundle.get('id', '')
             if bundle_id in ('recommendations', 'if-you-liked'):
                 yield CreateMenuEntry(bundle['title']['default'], 198, SelectImage(bundle.get('image')),
-                             SelectSynopsis(bundle.get('synopses')), callb_kwargs=dict(item_id=bundle_id))
-
+                                      SelectSynopsis(bundle.get('synopses')),
+                                      callb_kwargs=dict(item_id=bundle_id))
 
 
 def PlayStream(url, subtitles_url='', episode_id=None, stream_id=None, replay_chan_id=''):
