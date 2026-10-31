@@ -21,130 +21,131 @@ def run():
     plugin_handle = int(sys.argv[1])
     params = dict(parse_qsl(sys.argv[2].lstrip('?')))
     mode = int(params.pop('mode', 0))
+    results = None
 
     try:
         # These are the modes which tell the plugin where to go.
         if not mode:
-            Common.CreateBaseDirectory(**params)
+            results = Common.CreateBaseDirectory(**params)
 
         elif mode == 1:
-            Common.KidsMode()
+            results = Common.KidsMode()
 
         # Modes 101-119 will create a main directory menu entry
         elif mode == 101:
-            Video.ListLive()
+            results = Video.ListLive()
 
         elif mode == 102:
-            Video.ListAtoZ()
+            results = Video.ListAtoZ()
 
         elif mode == 103:
-            Video.ListCategories()
+            results = Video.ListCategories()
 
         elif mode == 104:
             from resources.lib.ipwww_search import list_search_terms
-            list_search_terms(**params)
+            results = list_search_terms(**params)
 
         elif mode == 105:
-            Video.ListMostPopular()
+            results = Video.ListMostPopular()
 
         elif mode == 106:
-            Video.ListHighlights(**params)
+            results = Video.ListHighlights(**params)
 
         elif mode == 107:
-            Video.ListWatching()
+            results = Video.ListWatching()
 
         elif mode == 108:
-            Video.ListFavourites()
+            results = Video.ListFavourites()
 
         elif mode == 109:
-            Video.ListChannels()
+            results = Video.ListChannels()
 
         elif mode == 112:
             from resources.lib import ipwww_radio as Radio
-            Radio.ListAtoZ()
+            results = Radio.ListAtoZ()
 
         elif mode == 113:
             from resources.lib import ipwww_radio as Radio
-            Radio.ListLive()
+            results = Radio.ListLive()
 
         elif mode == 114:
             from resources.lib import ipwww_radio as Radio
-            Radio.ListGenres()
+            results = Radio.ListGenres()
 
         elif mode == 116:
             from resources.lib import ipwww_radio as Radio
-            Radio.ListMostPopular()
+            results = Radio.ListMostPopular()
 
         elif mode == 117:
             from resources.lib import ipwww_radio as Radio
-            Radio.ListListenList()
+            results = Radio.ListListenList()
 
         elif mode == 199:
             from resources.lib import ipwww_radio as Radio
-            Radio.ListFollowing()
+            results = Radio.ListFollowing()
 
         elif mode == 119:
-            Common.SignOutBBCiD()
+            results = Common.SignOutBBCiD()
 
         elif mode == 120:
-            Video.GetChannelPage(**params)
+            results = Video.GetChannelPage(**params)
 
             # Modes 121-199 will create a sub directory menu entry
         elif mode == 121:
-            Video.GetEpisodes(**params)
+            results = Video.GetEpisodes(**params)
 
         elif mode == 122:
-            Video.GetAvailableStreams(**params)
+            results = Video.GetAvailableStreams(**params)
 
         elif mode == 123:
-            Video.AddAvailableLiveStreamsDirectory(**params)
+            results = Video.AddAvailableLiveStreamsDirectory(**params)
 
         elif mode == 124:
-            Video.GetAtoZPage(**params)
+            results = Video.GetAtoZPage(**params)
 
         elif mode == 125:
-            Video.ListCategoryFilters(**params)
+            results = Video.ListCategoryFilters(**params)
 
         elif mode == 126:
-            Video.GetFilteredCategory(**params)
+            results = Video.GetFilteredCategory(**params)
 
         elif mode == 127:
-            Video.GetGroup(**params)
+            results = Video.GetGroup(**params)
 
         elif mode == 128:
-            Video.ScrapeEpisodes(**params)
+            results = Video.ScrapeEpisodes(**params)
 
         elif mode == 130:
             from resources.lib.ipwww_search import do_search
-            do_search(**params)
+            results = do_search(**params)
 
         elif mode == 131:
             from resources.lib import ipwww_radio as Radio
-            Radio.GetEpisodes(**params)
+            results = Radio.GetEpisodes(**params)
 
         elif mode == 132:
             from resources.lib import ipwww_radio as Radio
-            Radio.GetAvailableStreams(**params)
+            results = Radio.GetAvailableStreams(**params)
 
         elif mode == 133:
             from resources.lib import ipwww_radio as Radio
-            Radio.AddAvailableLiveStreamsDirectory(**params)
+            results = Radio.AddAvailableLiveStreamsDirectory(**params)
 
         elif mode == 136:
             from resources.lib import ipwww_radio as Radio
-            Radio.GetPage(**params)
+            results = Radio.GetPage(**params)
 
         elif mode == 137:
             from resources.lib import ipwww_radio as Radio
-            Radio.GetCategoryPage(**params)
+            results = Radio.GetCategoryPage(**params)
 
         elif mode == 138:
             from resources.lib import ipwww_radio as Radio
-            Radio.GetAtoZPage(**params)
+            results = Radio.GetAtoZPage(**params)
 
         elif mode == 190:
             from resources.lib.ipwww_search import new_search
-            new_search(**params)
+            results = new_search(**params)
 
         # Modes 201-299 will create a playable menu entry, not a directory
         elif mode == 201:
@@ -172,10 +173,10 @@ def run():
             Radio.AddAvailableLiveStreamItem(**params)
 
         elif mode == 197:
-            Video.ListUHDTrial()
+            results = Video.ListUHDTrial()
 
         elif mode == 198:
-            Video.ListRecommendations(**params)
+            results = Video.ListRecommendations(**params)
 
         # Modes 301 - 399: Context menu handlers
         elif mode == 301:
@@ -200,6 +201,9 @@ def run():
         elif mode == 402:
             from resources.lib.ipwww_iptv import epg
             epg(params['port'])
+
+        if results:
+            Common.PushMenuItems(results)
 
     except Exception as err:
         import traceback

@@ -11,7 +11,7 @@ import xbmcplugin
 from resources.lib.ipwww_common import (
     translation,
     DIR_USERDATA,
-    AddMenuEntry,
+    CreateMenuEntry,
     icondir)
 from resources.lib import ipwww_video
 
@@ -141,8 +141,8 @@ def list_search_terms(content_type: str):
     txt_edit = translation(30604)
     txt_clear = translation(30605)
 
-    AddMenuEntry('New Search', mode=190, iconimage=icon, item_position='top',
-                 callb_kwargs=dict(content_type=content_type))
+    yield CreateMenuEntry('New Search', mode=190, iconimage=icon, item_position='top',
+                          callb_kwargs=dict(content_type=content_type))
     for keyword, date_info in search_history:
         ctx_mnu = [(txt_remove,
                     'RunPlugin(plugin://plugin.video.iplayerwww?'
@@ -155,8 +155,8 @@ def list_search_terms(content_type: str):
                     f'mode=304&content_type={content_type}&action=clear)')
                    ]
         date_created = datetime.fromtimestamp(date_info['created']).strftime('%Y-%m-%d')
-        AddMenuEntry(keyword, 130, icon, aired=date_created, context_mnu=ctx_mnu,
-                     callb_kwargs=dict(content_type=content_type, keyword=keyword))
+        yield CreateMenuEntry(keyword, 130, icon, aired=date_created, context_mnu=ctx_mnu,
+                              callb_kwargs=dict(content_type=content_type, keyword=keyword))
     ipwww_video.SetSortMethods(xbmcplugin.SORT_METHOD_DATE)
 
 

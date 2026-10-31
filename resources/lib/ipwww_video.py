@@ -684,7 +684,7 @@ def ParseJSON(programme_data, current_url):
                         url = pgm_dta.pop('url')
                         yield CreateMenuEntry(mode=128, **pgm_dta, callb_kwargs=dict(page_url=url))
                 else:
-                    ParseSingleJSON(meta, item, name, added_playables, added_directories)
+                    yield from ParseSingleJSON(meta, item, name, added_playables, added_directories)
 
         # The next section is for global and channel highlights. They are a bit tricky.
         groups = None
@@ -985,7 +985,7 @@ def ListHighlights(highlights_url):
 
     json_data = ScrapeJSON(html)
     if json_data:
-        ParseJSON(json_data, current_url)
+        yield from ParseJSON(json_data, current_url)
 
 
 def ListMostPopular():
@@ -995,7 +995,7 @@ def ListMostPopular():
 
     json_data = ScrapeJSON(html)
     if json_data:
-        ParseJSON(json_data, current_url)
+        yield from ParseJSON(json_data, current_url)
 
 
 def AddAvailableStreamItem(url):

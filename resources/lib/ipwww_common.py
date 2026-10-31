@@ -632,7 +632,9 @@ def CreateMenuEntry(name, mode, iconimage=None, description='', aired=None, resu
     return listitem_url, listitem, isFolder
 
 
-def PushMenuItems(menu_items: list[tuple[str, xbmcgui.ListItem, bool]] | tuple[tuple[str, xbmcgui.ListItem, bool]]):
+def PushMenuItems(menu_items: list[tuple[str, xbmcgui.ListItem, bool]] | tuple[tuple[str, xbmcgui.ListItem, bool]] | None):
+    if not menu_items:
+        return True
     handle = int(sys.argv[1])
     if not isinstance(menu_items, (list, tuple)):
         # Collect all items produced by generators.
