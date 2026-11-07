@@ -692,7 +692,6 @@ def CreateBaseDirectory(content_type=None):
             AddMenuEntry(translation(30306), 107, icondir+'favourites.png')
         if ADDON.getSetting("menu_video_added") == 'true':
             AddMenuEntry(translation(30307), 108, icondir+'favourites.png')
-        AddMenuEntry(translation(30325), 119, icondir+'settings.png')
     elif content_type == "audio":
         if ADDON.getSetting("menu_radio_live") == 'true':
             AddMenuEntry(translation(30321), 113, icondir+'live.png')
@@ -710,7 +709,6 @@ def CreateBaseDirectory(content_type=None):
         if ADDON.getSetting("menu_radio_following") == 'true':
             AddMenuEntry(translation(30334), 199, icondir+'favourites.png')
         """
-        AddMenuEntry(translation(30325), 119, icondir+'settings.png')
     else:
         ShowLicenceWarning()
         if ADDON.getSetting("menu_video_highlights") == 'true':
@@ -762,7 +760,6 @@ def CreateBaseDirectory(content_type=None):
         if ADDON.getSetting("menu_radio_following") == 'true':
             AddMenuEntry((translation(30324)+translation(30334)), 199,
                          icondir+'favourites.png')
-        AddMenuEntry(translation(30325), 119, icondir+'settings.png')
 
 
 class ProgressDlg(xbmcgui.DialogProgressBG):

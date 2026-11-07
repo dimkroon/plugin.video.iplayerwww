@@ -46,6 +46,13 @@
                                     <default>false</default>
                                     <control type="toggle"/>
                                 </setting>
+                                <setting id="bbc_id_logout" type="action" label="30325" help="" parent="bbc_id_enabled">
+                                    <level>0</level>
+                                    <data>RunPlugin(plugin://plugin.video.iplayerwww?mode=119)</data>
+                                    <control type="button" format="action">
+                                        <close>true</close>
+                                    </control>
+                                </setting>
                                 <setting id="kids_mode" type="action" label="30180" help="">
                                     <level>0</level>
                                     <data>XBMC.RunPlugin(plugin://plugin.video.iplayerwww?mode=1)</data>
