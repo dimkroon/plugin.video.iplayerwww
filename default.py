@@ -44,9 +44,6 @@ def run():
             from resources.lib.ipwww_search import list_search_terms
             list_search_terms(**params)
 
-        elif mode == 105:
-            Video.ListMostPopular()
-
         elif mode == 106:
             Video.ListHighlights(**params)
 
@@ -175,7 +172,7 @@ def run():
             Video.ListUHDTrial()
 
         elif mode == 198:
-            Video.ListRecommendations(**params)
+            Video.ListBundleContent(**params)
 
         # Modes 301 - 399: Context menu handlers
         elif mode == 301:

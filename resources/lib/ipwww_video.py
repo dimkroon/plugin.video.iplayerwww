@@ -735,7 +735,7 @@ def ParseJSON(programme_data, current_url):
                             if episode_data:
                                 CheckAutoplay(**episode_data)
                     elif bundle_id:
-                        # Use 198 - ListRecommendations() to parse the bundle's content from the original page.
+                        # Parse the bundle's content from the original page.
                         AddMenuEntry('[B]%s[/B]' % title, 198,
                                      description=translation(30314),
                                      callb_kwargs=dict(item_id=bundle_id, page_url=current_url))
@@ -974,16 +974,6 @@ def ListHighlights(highlights_url):
     """
 
     current_url = 'https://www.bbc.co.uk/%s' % highlights_url
-    html = OpenURL(current_url)
-
-    json_data = ScrapeJSON(html)
-    if json_data:
-        ParseJSON(json_data, current_url)
-
-
-def ListMostPopular():
-    """Scrapes all episodes of the most popular page."""
-    current_url = 'https://www.bbc.co.uk/iplayer/group/most-popular'
     html = OpenURL(current_url)
 
     json_data = ScrapeJSON(html)
@@ -1242,7 +1232,8 @@ def RemoveFavourite(programme_id):
     xbmc.executebuiltin('Container.Refresh')
 
 
-def ListRecommendations(item_id: str = '', page_url: str = 'https://www.bbc.co.uk/iplayer'):
+def ListBundleContent(item_id: str = '', page_url: str = 'https://www.bbc.co.uk/iplayer'):
+    """List the items of a particular bundle on a page."""
     data = GetJsonDataWithBBCid(page_url)
     if not data:
         return

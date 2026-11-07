@@ -256,11 +256,6 @@
                                     <default>true</default>
                                     <control type="toggle"/>
                                 </setting>
-                                <setting id="menu_video_most_popular" type="boolean" label="30513" help="">
-                                    <level>0</level>
-                                    <default>true</default>
-                                    <control type="toggle"/>
-                                </setting>
                                 <setting id="menu_video_az" type="boolean" label="30514" help="">
                                     <level>0</level>
                                     <default>true</default>
@@ -292,11 +287,6 @@
                                     <control type="toggle"/>
                                 </setting>
                                 <setting id="menu_video_added" type="boolean" label="30521" help="">
-                                    <level>0</level>
-                                    <default>true</default>
-                                    <control type="toggle"/>
-                                </setting>
-                                <setting id="menu_video_recommendations" type="boolean" label="30530" help="">
                                     <level>0</level>
                                     <default>true</default>
                                     <control type="toggle"/>

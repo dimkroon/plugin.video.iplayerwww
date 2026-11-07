@@ -677,8 +677,6 @@ def CreateBaseDirectory(content_type=None):
                          callb_kwargs=dict(highlights_url='iplayer'))
         if ADDON.getSetting("menu_video_channel_highlights") == 'true':
             AddMenuEntry(translation(30317), 109, icondir+'top_rated.png')
-        if ADDON.getSetting("menu_video_most_popular") == 'true':
-            AddMenuEntry(translation(30301), 105, icondir+'popular.png')
         if ADDON.getSetting("menu_video_az") == 'true':
             AddMenuEntry(translation(30302), 102, icondir+'lists.png')
         if ADDON.getSetting("menu_video_categories") == 'true':
@@ -694,8 +692,6 @@ def CreateBaseDirectory(content_type=None):
             AddMenuEntry(translation(30306), 107, icondir+'favourites.png')
         if ADDON.getSetting("menu_video_added") == 'true':
             AddMenuEntry(translation(30307), 108, icondir+'favourites.png')
-        if ADDON.getSetting("menu_video_recommendations") == 'true':
-            AddMenuEntry(translation(30336), 198, icondir+'top_rated.png')
         AddMenuEntry(translation(30325), 119, icondir+'settings.png')
     elif content_type == "audio":
         if ADDON.getSetting("menu_radio_live") == 'true':
@@ -723,9 +719,6 @@ def CreateBaseDirectory(content_type=None):
         if ADDON.getSetting("menu_video_channel_highlights") == 'true':
             AddMenuEntry((translation(30323)+translation(30317)), 109,
                          icondir+'top_rated.png')
-        if ADDON.getSetting("menu_video_most_popular") == 'true':
-            AddMenuEntry((translation(30323)+translation(30301)), 105,
-                         icondir+'popular.png')
         if ADDON.getSetting("menu_video_az") == 'true':
             AddMenuEntry((translation(30323)+translation(30302)), 102,
                          icondir+'lists.png')
@@ -747,9 +740,6 @@ def CreateBaseDirectory(content_type=None):
         if ADDON.getSetting("menu_video_added") == 'true':
             AddMenuEntry((translation(30323)+translation(30307)), 'url', 108,
                          icondir+'favourites.png')
-        if ADDON.getSetting("menu_video_recommendations") == 'true':
-            AddMenuEntry(translation(30323)+translation(30336), 198,
-                         icondir+'top_rated.png')
 
         if ADDON.getSetting("menu_radio_live") == 'true':
             AddMenuEntry((translation(30324)+translation(30321)), 113,
