@@ -1,7 +1,10 @@
 import os
 import requests
 import threading
+from copy import deepcopy
+from typing import Optional, Tuple
 from xml.etree import ElementTree as ET
+from urllib.parse import urljoin, urlsplit, urlunsplit
 
 
 import xbmc
@@ -13,51 +16,141 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 LOG_LVL = xbmc.LOGERROR
 
-subs_adaptationset="""<AdaptationSet
-  id="1"
-  group="3"
-  contentType="text"
-  lang="en"
-  mimeType="application/mp4"
-  segmentAlignment="true" 
-  codecs="stpp.ttml.im1t"
-  startWithSAP="1">
-  <Role schemeIdUri="urn:mpeg:dash:role:2011" value="caption" />
-  <Representation
-    id="s=caption1"
-    bandwidth="64000">
-    <SegmentTemplate
-        timescale="1000"
-        initialization="http://127.0.0.1:%d/caption/segment.init"
-        media="t=3840/s=caption1/b=64000/$Number$.m4s" />
-  </Representation>
-</AdaptationSet>"""
 
-#
+def _qualified_name(namespace: str, name: str) -> str:
+    return f'{{{namespace}}}{name}' if namespace else name
+
+
+def _directory_url(url: str) -> str:
+    parts = urlsplit(url)
+    path = parts.path
+    if not path.endswith('/'):
+        path += '/'
+    return urlunsplit((parts.scheme, parts.netloc, path, parts.query, parts.fragment))
+
+
+def _has_segment_schedule(attributes: dict, timeline) -> bool:
+    try:
+        if int(attributes.get('timescale', '1')) <= 0:
+            return False
+    except ValueError:
+        return False
+
+    if timeline is not None:
+        for segment in timeline:
+            if segment.tag.rsplit('}', 1)[-1] != 'S':
+                continue
+            try:
+                if int(segment.get('d', '0')) > 0:
+                    return True
+            except ValueError:
+                continue
+        return False
+
+    try:
+        return int(attributes.get('duration', '0')) > 0
+    except ValueError:
+        return False
+
+
+def _get_segment_schedule(root, period, namespace) -> Optional[Tuple[dict, Optional[ET.Element]]]:
+    segment_template = _qualified_name(namespace, 'SegmentTemplate')
+    adaptation_set = _qualified_name(namespace, 'AdaptationSet')
+    representation = _qualified_name(namespace, 'Representation')
+    timeline_tag = _qualified_name(namespace, 'SegmentTimeline')
+    root_template = root.find(segment_template)
+    period_template = period.find(segment_template)
+
+    for adaptation in period.findall(adaptation_set):
+        content_type = adaptation.get('contentType') or adaptation.get('mimeType', '').split('/', 1)[0]
+        if content_type not in ('audio', 'video'):
+            continue
+
+        representations = adaptation.findall(representation) or [None]
+        for rep in representations:
+            templates = [root_template, period_template, adaptation.find(segment_template)]
+            if rep is not None:
+                templates.append(rep.find(segment_template))
+            attributes = {}
+            timeline = None
+            for template in templates:
+                if template is None:
+                    continue
+                attributes.update(template.attrib)
+                found_timeline = template.find(timeline_tag)
+                if found_timeline is not None:
+                    timeline = found_timeline
+            if _has_segment_schedule(attributes, timeline):
+                return attributes, timeline
+    return None
 
 
 def modify_manifest(mpd: bytes, base_url: str, server_port: int) -> bytes:
     root = ET.fromstring(mpd)
     # Register the default namespace to prevent ET adding prefixes when writing.
     fq_tag_name = root.tag
-    def_namespace = fq_tag_name[1:fq_tag_name.index('}')]
+    def_namespace = fq_tag_name[1:root.tag.index('}')] if fq_tag_name.startswith('{') else ''
     ET.register_namespace('', def_namespace)
-    # Define the base url, otherwise all media requests will be made to the proxy.
-    url_elem = ET.Element('BaseURL')
-    url_elem.text = base_url
-    root.insert(0, url_elem)
-    # Insert the subtitle tag
-    subs_elem = ET.fromstring(subs_adaptationset % server_port)
-    root.find(f'Period', namespaces={'': def_namespace}).append(subs_elem)
-    new_mpd = ET.tostring(root, encoding='utf-8', xml_declaration=False)
-    return new_mpd
+
+    def qname(name):
+        return _qualified_name(def_namespace, name)
+
+    upstream_base = _directory_url(base_url)
+    base_urls = root.findall(qname('BaseURL'))
+    if not base_urls:
+        base_elem = ET.Element(qname('BaseURL'))
+        base_elem.text = upstream_base
+        root.insert(0, base_elem)
+    else:
+        for base_elem in base_urls:
+            relative_base = (base_elem.text or '').strip()
+            resolved_base = urljoin(upstream_base, relative_base)
+            base_elem.text = _directory_url(resolved_base)
+
+    period = root.find(qname('Period'))
+    if period is not None:
+        schedule = _get_segment_schedule(root, period, def_namespace)
+        if schedule is not None:
+            attributes, timeline = schedule
+            used_ids = {adaptation.get('id') for adaptation in period.findall(qname('AdaptationSet'))}
+            adaptation_id = '3'
+            while adaptation_id in used_ids:
+                adaptation_id = str(int(adaptation_id) + 1)
+
+            subtitle_adaptation = ET.SubElement(period, qname('AdaptationSet'), {
+                'id': adaptation_id,
+                'group': '3',
+                'contentType': 'text',
+                'lang': 'en',
+                'mimeType': 'application/mp4',
+                'segmentAlignment': 'true',
+                'codecs': 'stpp.ttml.im1t',
+                'startWithSAP': '1',
+            })
+            ET.SubElement(subtitle_adaptation, qname('Role'), {
+                'schemeIdUri': 'urn:mpeg:dash:role:2011',
+                'value': 'caption',
+            })
+            subtitle_representation = ET.SubElement(subtitle_adaptation, qname('Representation'), {
+                'id': 's=caption1',
+                'bandwidth': '64000',
+            })
+
+            attributes = dict(attributes)
+            attributes['initialization'] = f'http://127.0.0.1:{server_port}/caption/segment.init'
+            attributes['media'] = 't=3840/s=caption1/b=64000/$Number$.m4s'
+            subtitle_template = ET.SubElement(subtitle_representation, qname('SegmentTemplate'), attributes)
+            if timeline is not None:
+                subtitle_template.append(deepcopy(timeline))
+
+    return ET.tostring(root, encoding='utf-8', xml_declaration=False)
 
 
 def read_caption_init() -> bytes:
-    xbmc.log(f"[iPlayer WWW.proxy] AddonInfo path = {addoninfo['path']}", LOG_LVL)
     path = addoninfo['path']
-    data_file = os.path.join(addoninfo['path'], 'resources/data/itv-caption-init')
-    with open(data_file , 'rb') as f:
+    xbmc.log(f"[iPlayer WWW.proxy] AddonInfo path = {path}", LOG_LVL)
+    data_file = os.path.join(path, 'resources/data/ip-caption.init')
+    with open(data_file, 'rb') as f:
         return f.read()
 
 
@@ -94,12 +187,12 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
             return None
         xbmc.log('[iPlayer WWW.proxy] Received manifest from upstream server')
-        base_url = url.rsplit('/', 1)[0]
+        base_url = urljoin(resp.url or url, '.')
         xbmc.log(f"[iPlayer WWW.proxy] Setting base url to '{base_url}'.")
         new_manifest = modify_manifest(resp.content, base_url, self.server.server_port)
-        self.send_header('content-type', 'application/dash+xml')
-        self.send_header('content_length', str(len(new_manifest)))
-        self.send_header('connection', 'close')
+        self.send_header('Content-Type', 'application/dash+xml')
+        self.send_header('Content-Length', str(len(new_manifest)))
+        self.send_header('Connection', 'close')
         self.end_headers()
         self.wfile.write(new_manifest)
         # self.server.manifest_handled()
@@ -109,8 +202,8 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
         data = read_caption_init()
         xbmc.log(f'[iPlayer WWW.proxy] Read caption init of {len(data)} bytes', LOG_LVL)
         self.send_response(200)
-        self.send_header('content-type', 'video/mp4')
-        self.send_header('content_length', str(len(data)))
+        self.send_header('Content-Type', 'video/mp4')
+        self.send_header('Content-Length', str(len(data)))
         self.end_headers()
         self.wfile.write(data)
         # self.server.manifest_handled()
