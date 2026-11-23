@@ -15,7 +15,8 @@ from operator import itemgetter
 from resources.lib.ipwww_common import (
     translation, AddMenuEntry, OpenURL, OpenRequest, CheckLogin, CreateBaseDirectory,
     GetCookieJar, ParseImageUrl, download_subtitles, GeoBlockedError, WebRequestError,
-    iso_duration_2_seconds, PostJson, strptime, addonid, DeleteUrl, ProgressDlg)
+    iso_duration_2_seconds, PostJson, strptime, addonid, DeleteUrl, ProgressDlg,
+    kodi_version)
 from resources.lib import ipwww_progress
 
 import xbmc
@@ -1231,33 +1232,35 @@ def PlayStream(name, url, iconimage, description='', subtitles_url='', episode_i
     liz.setProperty("IsPlayable", "true")
     liz.setProperty('inputstream', 'inputstream.adaptive')
     liz.setProperty('inputstream.adaptive.manifest_type', 'mpd')
-    is_live = not bool(episode_id and stream_id)
-    if is_live:
-        from resources.lib.proxy import run_proxy
-        # live stream
-        proxy_address, proxy_server = run_proxy(url, subtitles_url)
-        liz.setPath(proxy_address)
-        if replay_chan_id:
-            resume_point = GetLiveStartPosition(replay_chan_id)
-            if resume_point is not None:
-                liz.setProperties({'ResumeTime': str(resume_point),
-                                   'TotalTime': '7200',
-                                   'inputstream.adaptive.play_timeshift_buffer': 'true'})
-    else:
-        liz.setPath(url)
-        if subtitles_url and ADDON.getSetting('subtitles') == 'true':
-            # print "Downloading subtitles"
+    liz.setPath(url)
+    xbmc.log(
+        f'[iPLayer www.video.PlayStream] url={url}, name={name}, episodeid = {episode_id}, stream_id = {stream_id}')
+    # FIXME: find a more reliable way to distinguish live from VOD
+    # is_live = not bool(episode_id and stream_id)  # these are non-empty on special events web-streams
+    is_live = '-cmaf' or '-uhd' in url
+    proxy_server = None
+    if subtitles_url:
+        if kodi_version() > (20, 0, 0):
+            from resources.lib.proxy import run_proxy
+
+            proxy_address, proxy_server = run_proxy(url, subtitles_url)
+            liz.setPath(proxy_address)
+        elif not is_live and ADDON.getSetting('subtitles') == 'true':
             subtitles_file = download_subtitles(subtitles_url)
-            liz.setSubtitles([subtitles_url])
+            liz.setSubtitles([subtitles_file])
+
+    if replay_chan_id:
+        resume_point = GetLiveStartPosition(replay_chan_id)
+        if resume_point is not None:
+            liz.setProperties({'ResumeTime': str(resume_point),
+                               'TotalTime': '7200',
+                               'inputstream.adaptive.play_timeshift_buffer': 'true'})
 
     xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, liz)
-    ipwww_progress.monitor_progress(episode_id, stream_id)
-    if is_live:
-        # Keep the proxy running until the stream has stopped.
-        strm_monitor = ipwww_progress.FileProgress(None, None)
-        strm_monitor.wait_until_playing(15)
-        strm_monitor.monitor_progress()     # Blocks until the stream stops
-        proxy_server.stop_server(3)
+    if proxy_server or not is_live:
+        ipwww_progress.monitor_progress(episode_id, stream_id)
+        if proxy_server:
+            proxy_server.stop_server(3)
 
 
 def GetLiveStartPosition(chan_id):
@@ -1407,11 +1410,6 @@ def ParseDASHStreams(stream_id):
             streams.append((tmp_sup, 1, url, '1280x720', protocol))
     source = int(ADDON.getSetting('subtitle_source'))
     for href, protocol, supplier in mediaselector[1]:
-        if '$Number$' in href:
-            # Found in live and red-button streams and requires `$Number$` to be replaced by
-            # a DASH segment id.
-            # Since DASH is handled by Inputstream Adaptive, live subtitles are not supported.
-            continue
         if 'akamai' in supplier and source in [0,1]:
             tmp_sup = 1
         elif 'limelight' in supplier and source in [0,2]:
