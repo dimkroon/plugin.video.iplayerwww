@@ -773,3 +773,10 @@ class ProgressDlg(xbmcgui.DialogProgressBG):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
+
+def kodi_version():
+    vers = getattr(kodi_version, '_kodi_vers_', None)
+    if vers is None:
+        vers_code = xbmc.getInfoLabel('System.BuildVersionCode')
+        kodi_version._kodi_vers_ = vers = tuple((int(v) for v in vers_code.split('.')))
+    return vers

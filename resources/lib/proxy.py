@@ -123,27 +123,13 @@ class DashManifest:
         if self._has_subtitles():
             log('Subtitles are already present in the manifest.')
             return False
-        # Get the timing from an audio stream
-        audio_template = self.audio_sets[0].find('.//SegmentTemplate', self.namespaces)
-        if audio_template is None:
-            log('Missing audio SegmentTemplate in DASH manifest')
-            return False
-        audio_timescale = int(audio_template.get('timescale', 0))
-        audio_duration = int(audio_template.get('duration', 0))
-        if not (audio_timescale and audio_duration):
-            log("Missing or incomplete timing in audio stream; can't add subtitle stream.")
-            return False
 
         # noinspection bad-argument-type
-        subs_adaptation_set = ET.SubElement(self.period, 'AdaptationSet', {
+        subs_adaptation_set = ET.Element('AdaptationSet', {
             'id': self._new_adaptation_set_id(),
             'group': self._new_group_id(),
             'contentType': 'text',
             'lang': 'en',
-            'mimeType': 'application/mp4',
-            'segmentAlignment': 'true',
-            'codecs': 'stpp.ttml.im1t',
-            'startWithSAP': '1',
             'impaired': 'true',
             'forced': addoninfo['addon'].getSetting('subtitles'),
             'default': 'false'
@@ -152,16 +138,56 @@ class DashManifest:
             'schemeIdUri': 'urn:mpeg:dash:role:2011',
             'value': 'caption',
         })
-        subtitle_representation = ET.SubElement(subs_adaptation_set, 'Representation', {
+
+        if '$Number$' in subtitles_url:
+            result = self._add_segmented_subs(subs_adaptation_set, subtitles_url)
+        else:
+            result = self._add_subs_file(subs_adaptation_set, subtitles_url)
+        if result:
+            self.period.append(subs_adaptation_set)
+        return result
+
+    def _add_segmented_subs(self, adaptation_set, subtitles_url):
+        """Subtitles used for live streams which are fetched in segments with the same
+        timing as video and audio segments.
+
+        """
+        # Get the timing from an audio stream
+        audio_template = self.audio_sets[0].find('.//SegmentTemplate', self.namespaces)
+        if audio_template is None:
+            log('Failed to find an audio SegementTemplate.')
+            return False
+        audio_timescale = int(audio_template.get('timescale', 0))
+        audio_duration = int(audio_template.get('duration', 0))
+        if not (audio_timescale and audio_duration):
+            log("Missing or incomplete timing in audio stream; can't add subtitle stream.")
+            return False
+
+        adaptation_set.set('mimeType', 'application/mp4')
+        adaptation_set.set('segmentAlignment', 'true')
+        adaptation_set.set('codecs', 'stpp.ttml.im1t')
+        adaptation_set.set('startWithSAP', '1')
+        representation = ET.SubElement(adaptation_set, 'Representation', {
             'id': 's=caption1',
             'bandwidth': '64000',
         })
-        ET.SubElement(subtitle_representation, 'SegmentTemplate', {
+        ET.SubElement(representation, 'SegmentTemplate', {
             'timescale': '1000',
             'duration': str(audio_duration * 1000 // audio_timescale),
             'initialization': f"http://127.0.0.1:{self.proxy_port}/{addoninfo['id']}/caption/segment.init",
             'media': subtitles_url
         })
+        return True
+
+    def _add_subs_file(self, adaptation_set, subtitles_url):
+        """Subtitles in a single file, used for VOD content."""
+        adaptation_set.set('mimeType', 'application/ttml+xml')
+        representation = ET.SubElement(adaptation_set, 'Representation', {
+            'id': 'subs1',
+            'bandwidth': '256',
+        })
+        subtitle_url = ET.SubElement(representation, 'BaseURL')
+        subtitle_url.text = subtitles_url
         return True
 
     def to_string(self):
@@ -212,7 +238,7 @@ class ProxyServer(HTTPServer):
         each time the subtitles are disabled/enabled in Kodi.
 
         """
-        if not self.subs_url:
+        if '$Number$' not in self.subs_url:
             log("Manifest handled; the server will shut down once the request has been completed.")
             # noinspection attribute-outside-init
             self._BaseServer__shutdown_request = True
