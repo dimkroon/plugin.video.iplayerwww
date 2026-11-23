@@ -1050,19 +1050,26 @@ def AddAvailableLiveStreamItemSelector(name, channelname, iconimage=None, watch_
 
 
 def AddAvailableLiveDASHStreamItem(channelname, watch_from_start=False):
-    streams = ParseLiveDASHStreams(channelname)
+    streams, subtitles = ParseLiveDASHStreams(channelname)
 
     source = int(ADDON.getSetting('live_source'))
     if source > 0:
-        match = [x for x in streams if (x[0] == source)]
-        if len(match) == 0:
-            match = streams
+        match_streams = [x for x in streams if (x[0] == source)]
+        if len(match_streams) == 0:
+            match_streams = streams
+        match_subs = [x for x in subtitles if (x[0] == source)]
+        if len(match_subs) == 0:
+            match_subs = subtitles
     else:
-        match = streams
+        match_streams = streams
+        match_subs = subtitles
+
+    subs_url = match_subs[0][1] if match_subs else ''
+
     if watch_from_start:
-        PlayStream(match[0][2], '', '', replay_chan_id=channelname)
+        PlayStream(match_streams[0][2], subs_url, replay_chan_id=channelname)
     else:
-        PlayStream(match[0][2], '', '')
+        PlayStream(match_streams[0][2], subs_url)
 
 
 def AddAvailableLiveStreamsDirectory(name, channelname, iconimage, watch_from_start=False):
@@ -1273,11 +1280,12 @@ def PlayStream(url, subtitles_url='', episode_id=None, stream_id=None, replay_ch
     liz.setProperty('inputstream.adaptive.manifest_type', 'mpd')
     xbmc.log(f'[iPlayer www.video.PlayStream] url={url}, episodeid = {episode_id}, stream_id = {stream_id}')
     # FIXME: find a more reliable way to distinguish live from VOD
-    is_live = '-cmaf' in url or '-uhd' in url
+    is_live = not bool(episode_id and stream_id)
+    # is_live = '-cmaf' in url or '-uhd' in url
     if is_live:
         from resources.lib.proxy import run_proxy
         # live stream
-        proxy_address, proxy_server = run_proxy(url)
+        proxy_address, proxy_server = run_proxy(url, subtitles_url)
         liz.setPath(proxy_address)
         if replay_chan_id:
             resume_point = GetLiveStartPosition(replay_chan_id)
@@ -1296,8 +1304,12 @@ def PlayStream(url, subtitles_url='', episode_id=None, stream_id=None, replay_ch
                                'subtitles.translate.file': subtitles_file})
 
     xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, liz)
-    ipwww_progress.monitor_progress(episode_id, stream_id)  # Blocks until the stream stops
+    ipwww_progress.monitor_progress(episode_id, stream_id)
     if is_live:
+        # Keep the proxy running until the stream has stopped.
+        strm_monitor = ipwww_progress.FileProgress(None, None)
+        strm_monitor.wait_until_playing(15)
+        strm_monitor.monitor_progress()     # Blocks until the stream stops
         proxy_server.stop_server(3)
 
 
@@ -1469,9 +1481,10 @@ def ParseDASHStreams(stream_id):
 
 def ParseLiveDASHStreams(channelname):
     streams = []
-    mediaselector = ParseMediaselector(channelname)
+    subtitles = []
+    videos, subs = ParseMediaselector(channelname)
     # print mediaselector
-    for provider_url, protocol, provider_name, transfer_format in mediaselector[0]:
+    for provider_url, protocol, provider_name, transfer_format in videos:
         if transfer_format == 'dash':
             tmp_sup = ''
             if 'akamai' in provider_name:
@@ -1485,8 +1498,22 @@ def ParseLiveDASHStreams(channelname):
             else:
                 continue
             streams.append((tmp_sup, 1, provider_url, '1280x720'))
+
+    for href, protocol, supplier in subs:
+        if 'akamai' in supplier:
+            tmp_sup = 1
+        elif 'limelight' in supplier:
+            tmp_sup = 2
+        elif 'bidi' in supplier:
+            tmp_sup = 3
+        elif 'cloudfront' in supplier:
+            tmp_sup = 4
+        else:
+            continue
+        subtitles.append((tmp_sup, href, protocol))
+
     # print streams
-    return streams
+    return streams, subtitles
 
 
 def ScrapeAvailableStreams(url):

@@ -124,7 +124,7 @@ class FileProgress(xbmc.Player):
                 self.post_event('heartbeat')
 
     def post_event(self, action):
-        if not self._episode_id and self._stream_id:
+        if not bool(self._episode_id and self._stream_id):
             return
         data = {
             "action": action,
